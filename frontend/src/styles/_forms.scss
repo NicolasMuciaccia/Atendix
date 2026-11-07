@@ -1,0 +1,73 @@
+// Native form controls styled after the design system's Input and Select.
+// They stay native so reactive forms, keyboard and screen readers work without extra code.
+
+.atx-control {
+  display: block;
+  width: 100%;
+  height: var(--control-lg);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--text-strong);
+  font: var(--weight-regular) var(--text-md) / var(--leading-normal) var(--font-sans);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+
+  &::placeholder {
+    color: var(--text-subtle);
+  }
+
+  &:hover:not(:disabled, :focus) {
+    border-color: var(--border-strong);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    background: var(--surface-muted);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--danger);
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.18);
+    }
+  }
+}
+
+.atx-control--sm {
+  height: var(--control-md);
+  padding: 0 var(--space-2-5);
+  font-size: var(--text-sm);
+}
+
+textarea.atx-control {
+  height: auto;
+  min-height: 112px;
+  padding: var(--space-2-5) var(--space-3);
+  resize: vertical;
+}
+
+select.atx-control {
+  appearance: none;
+  padding-right: var(--space-8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2397A0B5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2-5) center;
+  cursor: pointer;
+}
+
+input[type='date'].atx-control::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}

@@ -1,0 +1,81 @@
+// Mock data for the Atendix helpdesk UI kit. Illustrative content only.
+window.ATX_DATA = {
+  agent: { name: 'Marina Costa', status: 'online', statusLabel: 'Online' },
+  kpis: [
+    { icon: 'mail', tone: 'blue', label: 'Tickets abertos', value: '48', delta: '24%', direction: 'down', sentiment: 'positive', chart: 'line', data: [3, 3, 4, 4, 5, 7, 6, 9] },
+    { icon: 'clock', tone: 'amber', label: 'Respostas pendentes (SLA)', value: '12', delta: '3', direction: 'up', sentiment: 'negative' },
+    { icon: 'chart-no-axes-column', tone: 'blue', label: '1ª resposta (média)', value: '18m', delta: '40%', direction: 'down', sentiment: 'positive', chart: 'bars', data: [3, 2, 4, 3, 5, 6, 7] },
+    { icon: 'smile', tone: 'green', label: 'Satisfação (7d)', value: '96%', delta: '4%', direction: 'up', sentiment: 'positive', chart: 'bars', data: [2, 3, 3, 4, 5, 6, 7] },
+  ],
+  statusOptions: [
+    { value: 'open', label: 'Aberto', dot: 'var(--red-500)' },
+    { value: 'pending', label: 'Pendente', dot: 'var(--amber-500)' },
+    { value: 'solved', label: 'Resolvido', dot: 'var(--green-500)' },
+  ],
+  priorityOptions: [
+    { value: 'high', label: 'Alta', dot: 'var(--red-500)' },
+    { value: 'medium', label: 'Média', dot: 'var(--amber-500)' },
+    { value: 'low', label: 'Baixa', dot: 'var(--green-500)' },
+  ],
+  categoryOptions: [
+    { value: 'access', label: 'Acesso à conta', dot: 'var(--ink-300)' },
+    { value: 'billing', label: 'Faturamento', dot: 'var(--violet-500)' },
+    { value: 'technical', label: 'Técnico', dot: 'var(--blue-400)' },
+    { value: 'product', label: 'Feedback de produto', dot: 'var(--blue-300)' },
+    { value: 'onboarding', label: 'Onboarding', dot: 'var(--green-500)' },
+  ],
+  suggested: ['Enviar link de redefinição', 'Verificar status da conta', 'Escalar para o time técnico'],
+  tickets: [
+    {
+      id: 'AX-41827', name: 'Juliana Alves', email: 'juliana.alves@email.com', subject: 'Não consigo acessar minha conta', preview: 'Oi, estou recebendo um erro quando tento entrar…', time: '10:24',
+      priority: 'high', category: 'access', status: 'open', owner: 'me', sla: 'Responder em 2h 36m', created: '15 jun 2026 · 10:24', lastReply: '15 jun 2026 · 10:31',
+      location: 'São Paulo, SP', since: 'Cliente desde jan 2024', plan: 'Plano Pro · Mensal',
+      tags: [{ label: 'Acesso à conta' }, { label: 'Problema de login', tone: 'violet' }],
+      related: [{ title: 'Problemas de login no celular', id: '#AX-40211', date: '3 abr' }, { title: 'E-mail de redefinição não chegou', id: '#AX-38902', date: '12 mar' }, { title: 'Conta bloqueada após 5 tentativas', id: '#AX-37190', date: '6 fev' }],
+      thread: [
+        { author: 'Juliana Alves', time: '10:24', role: 'customer', body: ['Oi, equipe,', 'Estou recebendo um erro quando tento entrar na minha conta. Ontem funcionava, mas agora aparece “Credenciais inválidas” mesmo usando o e-mail e a senha corretos.', 'Vocês podem dar uma olhada? Preciso acessar um relatório importante hoje.', 'Obrigada!\nJuliana'] },
+        { author: 'Marina Costa', time: '10:31', role: 'agent', body: ['Oi, Juliana,', 'Obrigada por avisar! Verifiquei sua conta e está tudo certo do nosso lado. Vamos redefinir sua senha por segurança.', 'Acabei de enviar um link seguro de redefinição para o seu e-mail. Pode testar e me contar se conseguiu entrar?', 'Abraço,\nMarina'] },
+      ],
+    },
+    {
+      id: 'AX-41822', name: 'Daniel Kim', email: 'daniel.kim@email.com', subject: 'Pagamento não está passando', preview: 'O cartão está sendo recusado mesmo depois…', time: '9:17',
+      priority: 'medium', category: 'billing', status: 'open', owner: null, sla: 'Responder em 4h 10m', created: '15 jun 2026 · 09:17', lastReply: '—',
+      location: 'Curitiba, PR', since: 'Cliente desde mar 2025', plan: 'Plano Starter · Anual',
+      tags: [{ label: 'Faturamento', tone: 'violet' }, { label: 'Pagamento' }], unread: true,
+      related: [{ title: 'Atualizar dados do cartão', id: '#AX-39420', date: '2 mai' }],
+      thread: [{ author: 'Daniel Kim', time: '9:17', role: 'customer', body: ['Olá! O cartão está sendo recusado mesmo depois de confirmar com o banco que está tudo certo. Podem verificar?'] }],
+    },
+    {
+      id: 'AX-41815', name: 'Sofia Martins', email: 'sofia.martins@email.com', subject: 'Sugestão: modo escuro', preview: 'Adoraria ter uma opção de modo escuro no painel…', time: '8:46',
+      priority: 'low', category: 'product', status: 'pending', owner: 'me', sla: 'Responder em 1d 4h', created: '15 jun 2026 · 08:46', lastReply: '15 jun 2026 · 09:02',
+      location: 'Lisboa, PT', since: 'Cliente desde ago 2023', plan: 'Plano Pro · Anual',
+      tags: [{ label: 'Baixa', tone: 'low' }, { label: 'Feedback de produto', tone: 'blue' }],
+      related: [],
+      thread: [{ author: 'Sofia Martins', time: '8:46', role: 'customer', body: ['Adoraria ter uma opção de modo escuro no painel. Passo o dia inteiro nele!'] }, { author: 'Marina Costa', time: '9:02', role: 'note', body: ['Já existe pedido parecido no roadmap (#PRD-218). Vincular quando o time de produto responder.'] }],
+    },
+    {
+      id: 'AX-41790', name: 'Rafael Souza', email: 'rafael.souza@email.com', subject: 'Não consigo exportar meus dados', preview: 'A exportação trava em 99%. Vocês podem…', time: 'Ontem',
+      priority: 'medium', category: 'technical', status: 'open', owner: null, sla: 'Responder em 52m', created: '14 jun 2026 · 17:40', lastReply: '—',
+      location: 'Belo Horizonte, MG', since: 'Cliente desde nov 2024', plan: 'Plano Business · Mensal',
+      tags: [{ label: 'Média', tone: 'medium' }, { label: 'Técnico' }],
+      related: [],
+      thread: [{ author: 'Rafael Souza', time: 'Ontem, 17:40', role: 'customer', body: ['A exportação trava em 99%. Vocês podem verificar? Tentei em dois navegadores.'] }],
+    },
+    {
+      id: 'AX-41771', name: 'Lina Chen', email: 'lina.chen@email.com', subject: 'Link de convite não funciona', preview: 'O link de convite da equipe aparece como inválido…', time: 'Ontem',
+      priority: 'high', category: 'onboarding', status: 'open', owner: 'me', sla: 'Responder em 1h 05m', created: '14 jun 2026 · 15:12', lastReply: '14 jun 2026 · 15:30',
+      location: 'Porto Alegre, RS', since: 'Cliente desde jun 2026', plan: 'Plano Pro · Mensal',
+      tags: [{ label: 'Alta', tone: 'high' }, { label: 'Onboarding' }],
+      related: [],
+      thread: [{ author: 'Lina Chen', time: 'Ontem, 15:12', role: 'customer', body: ['O link de convite da equipe aparece como inválido para todo mundo que tento adicionar.'] }],
+    },
+    {
+      id: 'AX-41702', name: 'Marcos Lima', email: 'marcos.lima@email.com', subject: 'Reembolso de cobrança duplicada', preview: 'Fui cobrado duas vezes pelo plano Pro…', time: '14 jun',
+      priority: 'medium', category: 'billing', status: 'solved', owner: null, sla: 'Concluído', created: '14 jun 2026 · 09:05', lastReply: '14 jun 2026 · 11:20',
+      location: 'Recife, PE', since: 'Cliente desde jan 2022', plan: 'Plano Pro · Mensal',
+      tags: [{ label: 'Faturamento', tone: 'blue' }, { label: 'Reembolso' }],
+      related: [],
+      thread: [{ author: 'Marcos Lima', time: '14 jun, 09:05', role: 'customer', body: ['Fui cobrado duas vezes pelo plano Pro este mês.'] }, { author: 'Marina Costa', time: '14 jun, 11:20', role: 'agent', body: ['Oi, Marcos! O reembolso da cobrança duplicada foi processado e aparece na sua fatura em até 5 dias úteis.'] }],
+    },
+  ],
+};

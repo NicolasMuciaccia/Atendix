@@ -1,0 +1,80 @@
+<atx-dialog [open]="true" title="Novo chamado"
+            description="Escolha a etiqueta do equipamento e descreva o problema. O chamado começa com o status Aberto."
+            (closed)="closed.emit()">
+  <form id="ticket-form" class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (serverError()) {
+      <p class="banner" role="alert">
+        <atx-icon name="circle-alert" [size]="15" />
+        {{ serverError() }}
+      </p>
+    }
+
+    @if (catalogEmpty()) {
+      <p class="banner banner--info" role="status">
+        <atx-icon name="info" [size]="15" />
+        @if (isAdmin()) {
+          <span>Nenhum item cadastrado ainda. Cadastre em <a routerLink="/cadastros/itens">Cadastros</a> antes de abrir chamados.</span>
+        } @else {
+          <span>Nenhum equipamento cadastrado ainda. Peça ao administrador para cadastrar o item.</span>
+        }
+      </p>
+    }
+
+    <div class="row">
+      <atx-field label="Etiqueta" for="ticket-tag" hint="Preenche o item e o setor."
+                 [error]="errorOf('itemId')">
+        <select id="ticket-tag" class="atx-control" formControlName="tagItemId" aria-describedby="ticket-tag-message"
+                [attr.aria-invalid]="!!errorOf('itemId')" [attr.aria-busy]="itemsLoading()">
+          <option value="" disabled>{{ itemsLoading() ? 'Carregando…' : 'Selecione a etiqueta' }}</option>
+          @for (item of tagOptions(); track item.id) {
+            <option [value]="item.id">{{ item.assetTagCode }}</option>
+          }
+        </select>
+      </atx-field>
+      <atx-field label="Data" for="ticket-date" [error]="errorOf('requestDate')">
+        <input id="ticket-date" class="atx-control" type="date" formControlName="requestDate" [max]="today"
+               aria-describedby="ticket-date-message" [attr.aria-invalid]="!!errorOf('requestDate')" />
+      </atx-field>
+    </div>
+
+    <div class="row">
+      <atx-field label="Setor" for="ticket-sector" hint="Opcional: filtra os itens.">
+        <select id="ticket-sector" class="atx-control" formControlName="sectorId" aria-describedby="ticket-sector-message">
+          <option value="">Todos os setores</option>
+          @for (sector of sectorOptions(); track sector.id) {
+            <option [value]="sector.id">{{ sector.name }}</option>
+          }
+        </select>
+      </atx-field>
+      <atx-field label="Item" for="ticket-item">
+        <select id="ticket-item" class="atx-control" formControlName="itemId"
+                [attr.aria-invalid]="!!errorOf('itemId')">
+          <option value="" disabled>Selecione o item</option>
+          @for (item of itemOptions(); track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select>
+      </atx-field>
+    </div>
+
+    @if (selectedItem(); as item) {
+      <p class="summary" aria-live="polite">
+        <atx-icon name="circle-check" [size]="15" />
+        <span><strong>{{ item.name }}</strong> · {{ item.sectorName }} · etiqueta {{ item.assetTagCode }}</span>
+      </p>
+    }
+
+    <atx-field label="Descrição do problema" for="ticket-description" [error]="errorOf('problemDescription')"
+               hint="O que acontece, desde quando e o que já foi tentado.">
+      <textarea id="ticket-description" class="atx-control" formControlName="problemDescription" rows="5"
+                [maxlength]="maxDescription" aria-describedby="ticket-description-message"
+                [attr.aria-invalid]="!!errorOf('problemDescription')"></textarea>
+    </atx-field>
+  </form>
+
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="closed.emit()">Cancelar</button>
+    <button atxButton type="submit" form="ticket-form" iconLeft="plus" [loading]="saving()"
+            [disabled]="catalogEmpty()">Abrir chamado</button>
+  </div>
+</atx-dialog>

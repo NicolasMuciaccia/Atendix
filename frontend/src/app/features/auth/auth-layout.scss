@@ -1,0 +1,91 @@
+// Shared by the login and first-access pages
+:host {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--space-6) var(--space-4);
+  background: var(--bg-app);
+}
+
+.panel {
+  width: 100%;
+  max-width: 400px;
+}
+
+.wordmark {
+  margin-bottom: var(--space-6);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.card {
+  padding: var(--space-6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  color: var(--text-strong);
+}
+
+.lead {
+  margin-top: var(--space-1);
+  font-size: var(--text-base);
+  color: var(--text-muted);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: var(--text-sm);
+
+  atx-icon {
+    margin-top: 1px;
+  }
+}
+
+.banner--info {
+  background: var(--bg-subtle);
+  color: var(--info-text);
+}
+
+.password {
+  position: relative;
+
+  .atx-control {
+    padding-right: 44px;
+  }
+
+  button {
+    position: absolute;
+    top: 50%;
+    right: var(--space-1);
+    transform: translateY(-50%);
+  }
+}
+
+.footnote {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-align: center;
+}

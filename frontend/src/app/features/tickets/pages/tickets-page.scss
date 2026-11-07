@@ -1,0 +1,207 @@
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title-group {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.015em;
+  color: var(--text-strong);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--radius-full);
+  background: var(--blue-100);
+  color: var(--blue-600);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.date {
+  width: 150px;
+}
+
+.sector {
+  width: 200px;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--list-width);
+  min-height: 0;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.list-head {
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
+.list-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-height: 0;
+  padding: var(--space-1) var(--space-2) var(--space-4);
+  overflow-y: auto;
+}
+
+.skeleton-row {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+}
+
+.skeleton-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  .line {
+    height: 10px;
+  }
+
+  .short {
+    width: 60%;
+  }
+
+  .tags {
+    width: 40%;
+    height: 18px;
+  }
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.detail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+
+  atx-ticket-detail {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  padding: var(--space-6);
+
+  .title {
+    width: 40%;
+    height: 18px;
+  }
+
+  .block {
+    max-width: 640px;
+    height: 120px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+@media (max-width: 959px) {
+  .topbar {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .new-ticket {
+    display: none;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .date,
+  .sector {
+    width: auto;
+  }
+
+  .list {
+    width: 100%;
+    border-right: 0;
+  }
+
+  .detail {
+    display: none;
+  }
+
+  // On a phone the selected ticket takes the whole screen; the back button returns to the list
+  :host(.has-selection) {
+    .topbar,
+    .list {
+      display: none;
+    }
+
+    .detail {
+      display: flex;
+    }
+  }
+}

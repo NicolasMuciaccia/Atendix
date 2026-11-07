@@ -1,0 +1,39 @@
+<div class="panel">
+  <p class="wordmark">Atendix</p>
+
+  <main class="card">
+    <h1 class="title">Entrar</h1>
+    <p class="lead">Use o login e a senha fornecidos pelo administrador.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (error()) {
+        <p class="banner" role="alert">
+          <atx-icon name="circle-alert" [size]="15" />
+          {{ error() }}
+        </p>
+      }
+
+      <atx-field label="Login" for="login" [error]="showError('login') ? 'Informe seu login' : null">
+        <input id="login" class="atx-control" formControlName="login" autocomplete="username"
+               autocapitalize="none" spellcheck="false"
+               [attr.aria-invalid]="showError('login')" aria-describedby="login-message" />
+      </atx-field>
+
+      <atx-field label="Senha" for="password" [error]="showError('password') ? 'Informe sua senha' : null">
+        <div class="password">
+          <input id="password" class="atx-control" formControlName="password" autocomplete="current-password"
+                 [type]="showPassword() ? 'text' : 'password'"
+                 [attr.aria-invalid]="showError('password')" aria-describedby="password-message" />
+          <button atxIconButton type="button" size="md"
+                  [icon]="showPassword() ? 'lock' : 'eye'"
+                  [label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+                  (click)="showPassword.set(!showPassword())"></button>
+        </div>
+      </atx-field>
+
+      <button atxButton type="submit" size="lg" [fullWidth]="true" [loading]="submitting()">Entrar</button>
+    </form>
+  </main>
+
+  <p class="footnote">Esqueceu a senha? Peça ao administrador para redefini-la.</p>
+</div>

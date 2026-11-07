@@ -1,0 +1,71 @@
+// Tokens copied from the Atendix design system (design-system/tokens). Keep them in sync with it.
+@use 'styles/tokens/fonts';
+@use 'styles/tokens/colors';
+@use 'styles/tokens/typography';
+@use 'styles/tokens/spacing';
+@use 'styles/tokens/effects';
+@use 'styles/base';
+@use 'styles/forms';
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: var(--text-body);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// Skeleton blocks pulse in opacity only, which keeps the animation off the layout
+.atx-skeleton {
+  display: block;
+  border-radius: var(--radius-xs);
+  background: var(--ink-100);
+  animation: atx-pulse 1.4s var(--ease-standard) infinite;
+}
+
+.atx-spin {
+  animation: atx-spin 0.9s linear infinite;
+}
+
+@keyframes atx-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes atx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

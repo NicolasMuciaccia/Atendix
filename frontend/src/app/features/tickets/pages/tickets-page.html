@@ -1,0 +1,132 @@
+<header class="topbar">
+  <div class="title-group">
+    <h1 class="title">Chamados</h1>
+    @if (store.loaded()) {
+      <span class="count" aria-label="Total de chamados">{{ store.totalElements() }}</span>
+    }
+  </div>
+
+  @if (isAdmin()) {
+    <form class="filters" [formGroup]="filterForm" (ngSubmit)="applyFilter()" role="search" aria-label="Buscar chamados">
+      <label class="visually-hidden" for="filter-date">Data</label>
+      <input id="filter-date" class="atx-control atx-control--sm date" type="date" formControlName="date" />
+      <label class="visually-hidden" for="filter-sector">Setor</label>
+      <select id="filter-sector" class="atx-control atx-control--sm sector" formControlName="sectorId">
+        <option value="">Todos os setores</option>
+        @for (sector of sectors.records(); track sector.id) {
+          <option [value]="sector.id">{{ sector.name }}</option>
+        }
+      </select>
+      <button atxButton variant="secondary" type="submit" iconLeft="filter">Filtrar</button>
+      @if (store.hasFilters()) {
+        <button atxButton variant="ghost" type="button" (click)="clearFilter()">Limpar</button>
+      }
+    </form>
+  }
+
+  <button atxButton class="new-ticket" iconLeft="plus" type="button" (click)="openNewTicket()">Novo chamado</button>
+</header>
+
+<div class="workspace">
+  <section class="list" aria-label="Lista de chamados">
+    <p class="list-head">
+      {{ isAdmin() ? 'Todos os chamados' : 'Seus chamados' }} · mais recentes primeiro
+    </p>
+
+    <div class="list-body" [attr.aria-busy]="store.loading()">
+      @if (store.error()) {
+        <atx-error-state [message]="store.error()!" (retry)="store.load()" />
+      } @else if (!store.loaded()) {
+        @for (row of skeletonRows; track row) {
+          <div class="skeleton-row" aria-hidden="true">
+            <span class="atx-skeleton avatar"></span>
+            <span class="skeleton-lines">
+              <span class="atx-skeleton line"></span>
+              <span class="atx-skeleton line short"></span>
+              <span class="atx-skeleton line tags"></span>
+            </span>
+          </div>
+        }
+      } @else {
+        @for (ticket of store.tickets(); track ticket.id) {
+          <a atxTicketRow [ticket]="ticket" [selected]="ticket.id === store.selectedId()"
+             routerLink="." [queryParams]="{ chamado: ticket.id }"></a>
+        } @empty {
+          @if (store.hasFilters()) {
+            <atx-empty-state icon="filter" title="Nenhum chamado com esses filtros"
+                             description="Confira a data e o setor ou limpe a busca para ver todos.">
+              <button atxButton variant="secondary" size="sm" type="button" (click)="clearFilter()">Limpar filtros</button>
+            </atx-empty-state>
+          } @else if (isAdmin()) {
+            <atx-empty-state icon="inbox" title="Nenhum chamado aberto ainda"
+                             description="Os chamados abertos pelos usuários aparecem aqui, do mais recente para o mais antigo." />
+          } @else {
+            <atx-empty-state icon="ticket" title="Você ainda não abriu chamados"
+                             description="Quando um equipamento precisar de reparo, abra um chamado e acompanhe o status por aqui.">
+              <button atxButton size="sm" iconLeft="plus" type="button" (click)="openNewTicket()">Abrir chamado</button>
+            </atx-empty-state>
+          }
+        }
+      }
+    </div>
+
+    @if (store.totalPages() > 1) {
+      <nav class="pager" aria-label="Paginação">
+        <button atxIconButton icon="chevron-left" label="Página anterior" size="sm" type="button"
+                [disabled]="store.currentPage() === 0 || store.loading()"
+                (click)="store.goToPage(store.currentPage() - 1)"></button>
+        <span>{{ pageLabel() }}</span>
+        <button atxIconButton icon="chevron-right" label="Próxima página" size="sm" type="button"
+                [disabled]="store.currentPage() + 1 >= store.totalPages() || store.loading()"
+                (click)="store.goToPage(store.currentPage() + 1)"></button>
+      </nav>
+    }
+  </section>
+
+  <section class="detail" aria-label="Chamado selecionado">
+    @if (selected(); as ticket) {
+      <atx-ticket-detail [ticket]="ticket" [isAdmin]="isAdmin()" [canCancel]="canCancelSelected()" [busy]="busy()"
+                         (statusChange)="requestStatusChange($event)" (cancelRequest)="confirming.set('cancel')"
+                         (back)="backToList()" />
+    } @else if (store.selectionError()) {
+      <atx-empty-state icon="circle-alert" title="Chamado não encontrado" [description]="store.selectionError()">
+        <button atxButton variant="secondary" size="sm" iconLeft="arrow-left" type="button" (click)="backToList()">
+          Voltar para a lista
+        </button>
+      </atx-empty-state>
+    } @else if (chamado()) {
+      <div class="detail-skeleton" aria-hidden="true">
+        <span class="atx-skeleton title"></span>
+        <span class="atx-skeleton block"></span>
+      </div>
+    } @else {
+      <atx-empty-state icon="file-text" title="Selecione um chamado"
+                       description="A descrição do problema, os detalhes e as ações do chamado aparecem aqui." />
+    }
+  </section>
+</div>
+
+@if (newTicketOpen()) {
+  <atx-ticket-form-dialog [items]="items.records()" [itemsLoading]="!items.loaded()" [isAdmin]="isAdmin()"
+                          [saving]="creating()" [serverError]="createError()"
+                          [serverFieldErrors]="createFieldErrors()"
+                          (submitted)="createTicket($event)" (closed)="closeNewTicket()" />
+}
+
+<atx-dialog [open]="confirming() === 'cancel'" title="Cancelar este chamado?"
+            description="O chamado será excluído do sistema e não poderá ser recuperado."
+            (closed)="confirming.set(null)">
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="confirming.set(null)">Manter chamado</button>
+    <button atxButton variant="danger" iconLeft="trash-2" type="button" (click)="confirmCancel()">Cancelar chamado</button>
+  </div>
+</atx-dialog>
+
+<atx-dialog [open]="confirming() === 'finish'" title="Finalizar este chamado?"
+            description="Depois de finalizado, o chamado não volta para aberto nem para em andamento."
+            (closed)="confirming.set(null)">
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="confirming.set(null)">Voltar</button>
+    <button atxButton iconLeft="check" type="button" (click)="confirmFinish()">Finalizar chamado</button>
+  </div>
+</atx-dialog>

@@ -1,0 +1,101 @@
+:host {
+  --btn-bg: var(--action-primary);
+  --btn-hover: var(--action-primary-hover);
+  --btn-press: var(--action-primary-press);
+  --btn-fg: var(--white);
+  --btn-border: transparent;
+  --btn-shadow: var(--shadow-xs);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 14px;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-md);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  box-shadow: var(--btn-shadow);
+  font: var(--weight-semibold) var(--text-base) / 1 var(--font-sans);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    background: var(--btn-hover);
+    color: var(--btn-fg);
+    text-decoration: none;
+  }
+
+  &:active {
+    background: var(--btn-press);
+    transform: scale(0.98);
+  }
+
+  &[disabled] {
+    background: var(--btn-bg);
+    opacity: 0.45;
+    transform: none;
+    cursor: not-allowed;
+  }
+
+  &[aria-busy='true'] {
+    opacity: 0.8;
+    cursor: progress;
+  }
+}
+
+:host(.atx-button--sm) {
+  gap: var(--space-1-5);
+  height: var(--control-sm);
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+:host(.atx-button--lg) {
+  height: var(--control-lg);
+  padding: 0 18px;
+  font-size: var(--text-md);
+}
+
+:host(.atx-button--full) {
+  display: flex;
+  width: 100%;
+}
+
+:host(.atx-button--accent) {
+  --btn-bg: var(--action-accent);
+  --btn-hover: var(--action-accent-hover);
+  --btn-press: var(--action-accent-press);
+}
+
+:host(.atx-button--secondary) {
+  --btn-bg: var(--white);
+  --btn-hover: var(--surface-hover);
+  --btn-press: var(--ink-100);
+  --btn-fg: var(--ink-800);
+  --btn-border: var(--border-default);
+}
+
+:host(.atx-button--ghost) {
+  --btn-bg: transparent;
+  --btn-hover: var(--surface-hover);
+  --btn-press: var(--ink-100);
+  --btn-fg: var(--ink-700);
+  --btn-shadow: none;
+}
+
+:host(.atx-button--danger) {
+  --btn-bg: var(--danger-bg);
+  --btn-hover: var(--red-100);
+  --btn-press: var(--red-100);
+  --btn-fg: var(--danger-text);
+  --btn-shadow: none;
+}

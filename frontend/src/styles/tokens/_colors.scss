@@ -1,0 +1,130 @@
+:root{
+  /* Navy — navigation, primary CTA, headings */
+  --navy-950:#0B1630;
+  --navy-900:#101F3C;
+  --navy-800:#172A4D;
+  --navy-700:#21365E;
+  --navy-600:#2E4672;
+  --navy-400:#8D9BB8;
+  --navy-300:#B4BFD4;
+
+  /* Blue — brand accent */
+  --blue-50:#F3F6FF;
+  --blue-100:#E7EDFF;
+  --blue-200:#D0DBFF;
+  --blue-300:#90A4FF;
+  --blue-400:#6381F8;
+  --blue-500:#365DF5;
+  --blue-600:#2A4CDB;
+  --blue-700:#2240B5;
+
+  /* Ink — navy-tinted neutrals */
+  --ink-900:#101F3C;
+  --ink-800:#1F2C47;
+  --ink-700:#36435E;
+  --ink-600:#4F5B76;
+  --ink-500:#6A7590;
+  --ink-400:#97A0B5;
+  --ink-300:#C4CAD8;
+  --ink-200:#DEE3EE;
+  --ink-150:#E8ECF4;
+  --ink-100:#EEF1F7;
+  --ink-50:#F7F9FC;
+  --white:#FFFFFF;
+
+  /* Semantic hues */
+  --green-50:#E8F6F0;
+  --green-100:#D2EFE3;
+  --green-500:#23A579;
+  --green-600:#1A8762;
+  --amber-50:#FEF4E6;
+  --amber-100:#FDE7C8;
+  --amber-500:#F4A340;
+  --amber-600:#C47716;
+  --red-50:#FDEEEE;
+  --red-100:#FBDADA;
+  --red-500:#E5484D;
+  --red-600:#C9343A;
+  --violet-50:#F1EEFF;
+  --violet-100:#E3DDFF;
+  --violet-500:#7C66F0;
+  --violet-600:#6450D6;
+
+  /* ---- Semantic aliases ---- */
+  --bg-app:var(--ink-50);
+  --bg-subtle:var(--blue-50);
+  --surface-card:var(--white);
+  --surface-panel:var(--white);
+  --surface-muted:var(--ink-50);
+  --surface-sunken:var(--ink-100);
+  --surface-selected:var(--blue-50);
+  --surface-hover:#F4F6FA;
+  --surface-message:#F4F6FA;
+  --surface-message-agent:#EEF3FF;
+  --surface-inverse:var(--navy-900);
+
+  --text-strong:var(--ink-900);
+  --text-body:var(--ink-700);
+  --text-muted:var(--ink-500);
+  --text-subtle:var(--ink-400);
+  --text-inverse:var(--white);
+  --text-inverse-muted:var(--navy-400);
+  --text-link:var(--blue-500);
+  --text-link-hover:var(--blue-600);
+  --text-accent:var(--blue-500);
+
+  --border-subtle:var(--ink-150);
+  --border-default:var(--ink-200);
+  --border-strong:var(--ink-300);
+  --border-focus:var(--blue-500);
+
+  --action-primary:var(--navy-900);
+  --action-primary-hover:var(--navy-800);
+  --action-primary-press:var(--navy-950);
+  --action-accent:var(--blue-500);
+  --action-accent-hover:var(--blue-600);
+  --action-accent-press:var(--blue-700);
+
+  --nav-bg:var(--navy-900);
+  --nav-item-active:var(--navy-700);
+  --nav-item-hover:var(--navy-800);
+  --nav-text:#D5DCEA;
+  --nav-text-active:var(--white);
+  --nav-text-muted:var(--navy-400);
+  --nav-badge-bg:var(--navy-700);
+
+  --positive:var(--green-500);
+  --positive-text:var(--green-600);
+  --positive-bg:var(--green-50);
+  --attention:var(--amber-500);
+  --attention-text:var(--amber-600);
+  --attention-bg:var(--amber-50);
+  --danger:var(--red-500);
+  --danger-text:var(--red-600);
+  --danger-bg:var(--red-50);
+  --info:var(--blue-500);
+  --info-text:var(--blue-600);
+  --info-bg:var(--blue-100);
+
+  /* Priority + category chips */
+  --priority-high-bg:var(--red-50);
+  --priority-high-text:var(--red-600);
+  --priority-medium-bg:var(--amber-50);
+  --priority-medium-text:var(--amber-600);
+  --priority-low-bg:var(--green-50);
+  --priority-low-text:var(--green-600);
+  --tag-neutral-bg:#EDF1F8;
+  --tag-neutral-text:var(--ink-600);
+  --tag-violet-bg:var(--violet-50);
+  --tag-violet-text:var(--violet-600);
+  --tag-blue-bg:var(--blue-100);
+  --tag-blue-text:var(--blue-600);
+
+  /* KPI icon tiles */
+  --tile-blue-bg:var(--blue-100);
+  --tile-blue-fg:var(--blue-500);
+  --tile-amber-bg:var(--amber-50);
+  --tile-amber-fg:var(--amber-500);
+  --tile-green-bg:var(--green-50);
+  --tile-green-fg:var(--green-500);
+}

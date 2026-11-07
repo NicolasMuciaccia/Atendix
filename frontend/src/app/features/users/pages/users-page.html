@@ -1,0 +1,122 @@
+<header class="topbar">
+  <div class="title-group">
+    <h1 class="title">Usuários</h1>
+    @if (store.users().length) {
+      <span class="count" aria-label="Total de usuários">{{ store.totalElements() }}</span>
+    }
+  </div>
+  <button atxButton iconLeft="user-plus" type="button" (click)="openForm()">Novo usuário</button>
+</header>
+
+<div class="content">
+  @if (store.error()) {
+    <atx-error-state [message]="store.error()!" (retry)="store.load()" />
+  } @else {
+    <div class="table" role="table" aria-label="Usuários cadastrados" [attr.aria-busy]="store.loading()">
+      <div class="row head" role="row">
+        <span role="columnheader">Usuário</span>
+        <span role="columnheader">Perfil</span>
+        <span role="columnheader">Situação</span>
+        <span role="columnheader">Cadastro</span>
+        <span role="columnheader"><span class="visually-hidden">Ações</span></span>
+      </div>
+
+      @if (store.loading() && !store.users().length) {
+        @for (row of skeletonRows; track row) {
+          <div class="row" aria-hidden="true">
+            <span class="user"><span class="atx-skeleton avatar"></span><span class="atx-skeleton line"></span></span>
+            <span class="atx-skeleton line"></span>
+            <span class="atx-skeleton line"></span>
+            <span class="atx-skeleton line"></span>
+            <span></span>
+          </div>
+        }
+      } @else {
+        @for (user of store.users(); track user.id) {
+          <div class="row" role="row">
+            <span class="user" role="cell">
+              <atx-avatar [name]="user.name" [size]="34" />
+              <span class="user-text">
+                <span class="name">
+                  {{ user.name }}
+                  @if (user.id === currentUserId()) {
+                    <atx-tag tone="blue">Você</atx-tag>
+                  }
+                </span>
+                <span class="login">{{ user.login }}</span>
+              </span>
+            </span>
+            <span role="cell" class="cell" data-label="Perfil">
+              @if (user.id === currentUserId()) {
+                <span class="role-text">{{ roleLabels[user.role] }}</span>
+              } @else {
+                <label class="visually-hidden" [for]="'role-' + user.id">Perfil de {{ user.name }}</label>
+                <select class="atx-control atx-control--sm role" [id]="'role-' + user.id" [value]="user.role"
+                        [disabled]="pendingUserId() === user.id" (change)="changeRole(user, $any($event.target).value)">
+                  @for (role of roles; track role) {
+                    <option [value]="role" [selected]="role === user.role">{{ roleLabels[role] }}</option>
+                  }
+                </select>
+              }
+            </span>
+            <span role="cell" class="cell" data-label="Situação">
+              @if (user.mustChangePassword) {
+                <atx-tag tone="attention" [dot]="true">Aguardando 1º acesso</atx-tag>
+              } @else {
+                <atx-tag tone="positive" [dot]="true">Senha definida</atx-tag>
+              }
+            </span>
+            <span role="cell" class="cell meta" data-label="Cadastro">{{ user.createdAt | dateTime }}</span>
+            <span role="cell" class="actions">
+              @if (user.id !== currentUserId()) {
+                <button atxButton variant="ghost" size="sm" iconLeft="refresh-cw" type="button"
+                        [loading]="pendingUserId() === user.id" (click)="resetTarget.set(user)">
+                  Redefinir senha
+                </button>
+              }
+            </span>
+          </div>
+        } @empty {
+          <atx-empty-state icon="users" title="Nenhum usuário cadastrado" />
+        }
+      }
+    </div>
+
+    @if (store.totalPages() > 1) {
+      <nav class="pager" aria-label="Paginação">
+        <button atxIconButton icon="chevron-left" label="Página anterior" size="sm" type="button"
+                [disabled]="store.currentPage() === 0" (click)="store.goToPage(store.currentPage() - 1)"></button>
+        <span>{{ pageLabel() }}</span>
+        <button atxIconButton icon="chevron-right" label="Próxima página" size="sm" type="button"
+                [disabled]="store.currentPage() + 1 >= store.totalPages()"
+                (click)="store.goToPage(store.currentPage() + 1)"></button>
+      </nav>
+    }
+  }
+</div>
+
+@if (formOpen()) {
+  <atx-user-form-dialog [saving]="creating()" [serverError]="createError()" [serverFieldErrors]="createFieldErrors()"
+                        (submitted)="createUser($event)" (closed)="formOpen.set(false)" />
+}
+
+<atx-dialog [open]="!!createdUser()" title="Usuário cadastrado" (closed)="createdUser.set(null)">
+  @if (createdUser(); as user) {
+    <p class="created">
+      Passe ao usuário o login <strong>{{ user.login }}</strong> e a senha inicial
+      <strong>{{ initialPassword }}</strong>. No primeiro acesso, o sistema pede a troca da senha.
+    </p>
+  }
+  <div dialogActions>
+    <button atxButton type="button" (click)="createdUser.set(null)">Entendi</button>
+  </div>
+</atx-dialog>
+
+<atx-dialog [open]="!!resetTarget()" title="Redefinir senha?"
+            [description]="'A senha de ' + (resetTarget()?.name ?? '') + ' volta para a inicial e a troca será pedida no próximo acesso.'"
+            (closed)="resetTarget.set(null)">
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="resetTarget.set(null)">Cancelar</button>
+    <button atxButton iconLeft="refresh-cw" type="button" (click)="confirmReset()">Redefinir senha</button>
+  </div>
+</atx-dialog>

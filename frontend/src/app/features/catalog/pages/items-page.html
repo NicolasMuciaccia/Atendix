@@ -1,0 +1,107 @@
+<div class="toolbar">
+  <p class="summary">
+    @if (store.loaded()) {
+      {{ store.records().length }} {{ store.records().length === 1 ? 'item cadastrado' : 'itens cadastrados' }}
+    }
+  </p>
+  <button atxButton iconLeft="plus" type="button" (click)="openCreate()">Novo item</button>
+</div>
+
+@if (store.error()) {
+  <atx-error-state [message]="store.error()!" (retry)="store.load()" />
+} @else {
+  <div class="table" role="table" aria-label="Itens cadastrados" [attr.aria-busy]="store.loading()">
+    <div class="row head" role="row">
+      <span role="columnheader">Item</span>
+      <span role="columnheader">Setor</span>
+      <span role="columnheader">Etiqueta</span>
+      <span role="columnheader"><span class="visually-hidden">Ações</span></span>
+    </div>
+
+    @if (!store.loaded()) {
+      @for (row of skeletonRows; track row) {
+        <div class="row" aria-hidden="true">
+          <span class="atx-skeleton line"></span>
+          <span class="atx-skeleton line"></span>
+          <span class="atx-skeleton line"></span>
+          <span></span>
+        </div>
+      }
+    } @else {
+      @for (item of store.records(); track item.id) {
+        <div class="row" role="row">
+          <span class="primary" role="cell">{{ item.name }}</span>
+          <span class="cell" role="cell" data-label="Setor">{{ item.sectorName }}</span>
+          <span class="cell" role="cell" data-label="Etiqueta"><atx-tag icon="tag">{{ item.assetTagCode }}</atx-tag></span>
+          <span class="actions" role="cell">
+            <button atxIconButton icon="pen-line" [label]="'Editar ' + item.name" type="button"
+                    (click)="openEdit(item)"></button>
+            <button atxIconButton icon="trash-2" [label]="'Excluir ' + item.name" type="button"
+                    [disabled]="deletingId() === item.id" (click)="deleteTarget.set(item)"></button>
+          </span>
+        </div>
+      } @empty {
+        <atx-empty-state icon="layers" title="Nenhum item cadastrado"
+                         description="Um item é o equipamento que recebe chamados: ele fica em um setor e tem uma etiqueta.">
+          <button atxButton size="sm" iconLeft="plus" type="button" (click)="openCreate()">Novo item</button>
+        </atx-empty-state>
+      }
+    }
+  </div>
+}
+
+<atx-dialog [open]="formOpen()" [title]="editing() ? 'Editar item' : 'Novo item'"
+            description="O item fica em um setor e é identificado por uma etiqueta livre."
+            (closed)="closeForm()">
+  <form id="item-form" class="form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    @if (formError()) {
+      <p class="banner" role="alert"><atx-icon name="circle-alert" [size]="15" /> {{ formError() }}</p>
+    }
+    @if (sectors.loaded() && assetTags.loaded() && !catalogReady()) {
+      <p class="banner info">
+        <atx-icon name="info" [size]="15" />
+        <span>Cadastre ao menos um <a routerLink="../setores">setor</a> e uma <a routerLink="../etiquetas">etiqueta</a> antes de criar itens.</span>
+      </p>
+    }
+
+    <atx-field label="Nome do item" for="item-name" [error]="errorOf('name', 'Informe o nome do item')">
+      <input id="item-name" class="atx-control" formControlName="name" [maxlength]="maxName"
+             placeholder="Ex.: Impressora HP LaserJet" autocomplete="off" aria-describedby="item-name-message"
+             [attr.aria-invalid]="!!errorOf('name', 'Informe o nome do item')" />
+    </atx-field>
+
+    <atx-field label="Setor" for="item-sector" [error]="errorOf('sectorId', 'Selecione o setor')">
+      <select id="item-sector" class="atx-control" formControlName="sectorId" aria-describedby="item-sector-message"
+              [attr.aria-invalid]="!!errorOf('sectorId', 'Selecione o setor')">
+        <option value="" disabled>Selecione o setor</option>
+        @for (sector of sectors.records(); track sector.id) {
+          <option [value]="sector.id">{{ sector.name }}</option>
+        }
+      </select>
+    </atx-field>
+
+    <atx-field label="Etiqueta" for="item-tag" hint="Só aparecem etiquetas que ainda não pertencem a outro item."
+               [error]="errorOf('assetTagId', 'Selecione a etiqueta')">
+      <select id="item-tag" class="atx-control" formControlName="assetTagId" aria-describedby="item-tag-message"
+              [attr.aria-invalid]="!!errorOf('assetTagId', 'Selecione a etiqueta')">
+        <option value="" disabled>Selecione a etiqueta</option>
+        @for (assetTag of tagOptions(); track assetTag.id) {
+          <option [value]="assetTag.id">{{ assetTag.code }}</option>
+        }
+      </select>
+    </atx-field>
+  </form>
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="closeForm()">Cancelar</button>
+    <button atxButton type="submit" form="item-form" iconLeft="check" [loading]="saving()">Salvar</button>
+  </div>
+</atx-dialog>
+
+<atx-dialog [open]="!!deleteTarget()" title="Excluir item?"
+            [description]="'O item ' + (deleteTarget()?.name ?? '') + ' será excluído e a etiqueta dele ficará livre. Só é possível se não houver chamados do item.'"
+            (closed)="deleteTarget.set(null)">
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="deleteTarget.set(null)">Manter</button>
+    <button atxButton variant="danger" iconLeft="trash-2" type="button" (click)="confirmDelete()">Excluir item</button>
+  </div>
+</atx-dialog>

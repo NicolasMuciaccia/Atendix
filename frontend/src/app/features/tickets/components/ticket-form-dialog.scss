@@ -1,0 +1,55 @@
+:host {
+  --dialog-width: 560px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.banner,
+.summary {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+
+  atx-icon {
+    margin-top: 1px;
+  }
+}
+
+.banner {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.banner--info {
+  background: var(--bg-subtle);
+  color: var(--info-text);
+}
+
+.summary {
+  background: var(--positive-bg);
+  color: var(--positive-text);
+
+  strong {
+    font-weight: var(--weight-semibold);
+  }
+}
+
+@media (max-width: 559px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

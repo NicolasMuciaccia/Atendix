@@ -1,0 +1,41 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Tickets" subtitle="KpiCard, TicketRow, CustomerSummary, PanelSection, DetailRow, RelatedTicket" -->
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{background:var(--white);padding:16px 20px}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { KpiCard, TicketRow, CustomerSummary, PanelSection, DetailRow, RelatedTicket, StatusPill } = window.AtendixDesignSystem_94ef37;
+function Demo(){
+  const [sel,setSel]=React.useState(0);
+  return <div style={{display:'flex',flexDirection:'column',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <KpiCard icon="mail" label="Tickets abertos" value="48" delta="24%" direction="down" sentiment="positive" chart="line" data={[3,3,4,4,6,7,9]} />
+      <KpiCard icon="clock" tone="amber" label="Respostas pendentes (SLA)" value="12" delta="3" direction="up" sentiment="negative" />
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 250px',gap:20}}>
+      <div>
+        <TicketRow name="Priya Sharma" subject="Não consigo acessar minha conta" preview="Oi, estou recebendo um erro ao tentar entrar…" time="10:24" tags={[{label:'Alta',tone:'high'},{label:'Acesso à conta'}]} selected={sel===0} onClick={()=>setSel(0)} />
+        <TicketRow name="Daniel Kim" subject="Pagamento não está passando" preview="O cartão está sendo recusado mesmo…" time="9:17" tags={[{label:'Faturamento',tone:'violet'},{label:'Pagamento'}]} selected={sel===1} onClick={()=>setSel(1)} unread />
+        <TicketRow name="Sofia Martins" subject="Sugestão: modo escuro" preview="Adoraria ter uma opção de modo escuro…" time="8:46" tags={[{label:'Baixa',tone:'low'},{label:'Feedback de produto'}]} selected={sel===2} onClick={()=>setSel(2)} />
+      </div>
+      <div>
+        <PanelSection title="Detalhes do ticket" style={{paddingTop:4}}>
+          <DetailRow label="Status"><StatusPill plain tone="danger" dot>Aberto</StatusPill></DetailRow>
+          <DetailRow label="SLA"><StatusPill tone="danger" icon="clock">Responder em 2h 36m</StatusPill></DetailRow>
+          <DetailRow label="Criado">15 jun 2026 · 10:24</DetailRow>
+        </PanelSection>
+        <PanelSection title="Tickets relacionados" count={2} divider={false} style={{paddingBottom:0}}>
+          <RelatedTicket title="Problemas de login no celular" id="#AX-40211" date="3 abr" onClick={()=>{}} />
+          <RelatedTicket title="E-mail de redefinição não chegou" id="#AX-38902" date="12 mar" onClick={()=>{}} />
+        </PanelSection>
+      </div>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script></body></html>

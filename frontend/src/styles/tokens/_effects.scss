@@ -1,0 +1,25 @@
+:root{
+  --shadow-xs:0 1px 2px rgba(16,31,60,.05);
+  --shadow-sm:0 1px 2px rgba(16,31,60,.04),0 2px 6px rgba(16,31,60,.04);
+  --shadow-md:0 2px 4px rgba(16,31,60,.04),0 8px 20px rgba(16,31,60,.06);
+  --shadow-lg:0 4px 8px rgba(16,31,60,.04),0 16px 40px rgba(16,31,60,.09);
+  --shadow-xl:0 8px 16px rgba(16,31,60,.05),0 28px 64px rgba(16,31,60,.12);
+  --shadow-inset:inset 0 1px 2px rgba(16,31,60,.06);
+  --focus-ring:0 0 0 3px rgba(54,93,245,.22);
+  --focus-ring-strong:0 0 0 2px var(--white),0 0 0 4px var(--blue-500);
+
+  --ease-standard:cubic-bezier(.2,0,0,1); /* @kind other */
+  --ease-out:cubic-bezier(.16,1,.3,1); /* @kind other */
+  --duration-fast:120ms; /* @kind other */
+  --duration-base:180ms; /* @kind other */
+  --duration-slow:260ms; /* @kind other */
+
+  --scrim:rgba(16,31,60,.45);
+  --blur-glass:saturate(160%) blur(12px); /* @kind other */
+
+  --z-sticky:10; /* @kind other */
+  --z-dropdown:30; /* @kind other */
+  --z-overlay:40; /* @kind other */
+  --z-modal:50; /* @kind other */
+  --z-toast:60; /* @kind other */
+}

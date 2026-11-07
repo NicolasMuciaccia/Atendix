@@ -1,0 +1,89 @@
+<header class="header">
+  <button atxIconButton class="back" icon="arrow-left" label="Voltar para a lista" type="button"
+          (click)="back.emit()"></button>
+  <div class="heading">
+    <h2 class="title">{{ ticket().itemName }}</h2>
+    <div class="meta">
+      <atx-ticket-status [status]="ticket().status" />
+      <span class="asset"><atx-icon name="tag" [size]="13" /> {{ ticket().assetTag }}</span>
+    </div>
+  </div>
+</header>
+
+<div class="scroll">
+  <div class="columns">
+    <section class="main" aria-label="Solicitação">
+      <article class="report">
+        <atx-avatar [name]="ticket().requesterName" [size]="32" />
+        <div class="bubble">
+          <div class="bubble-head">
+            <span class="author">{{ ticket().requesterName }}</span>
+            <time [attr.datetime]="ticket().createdAt">{{ ticket().createdAt | dateTime }}</time>
+          </div>
+          <p class="text">{{ ticket().problemDescription }}</p>
+        </div>
+      </article>
+
+      @if (isAdmin()) {
+        <section class="handling" aria-labelledby="handling-title">
+          <h3 class="handling-title" id="handling-title">Tratativa</h3>
+          @switch (ticket().status) {
+            @case ('OPEN') {
+              <p class="handling-text">Ninguém começou a atender este chamado ainda.</p>
+              <div class="handling-actions">
+                <button atxButton iconLeft="zap" type="button" [loading]="busy() === 'status'"
+                        (click)="statusChange.emit('IN_PROGRESS')">Iniciar atendimento</button>
+                <button atxButton variant="secondary" iconLeft="check" type="button" [disabled]="busy() === 'status'"
+                        (click)="statusChange.emit('FINISHED')">Finalizar</button>
+              </div>
+            }
+            @case ('IN_PROGRESS') {
+              <p class="handling-text">O atendimento está em andamento.</p>
+              <div class="handling-actions">
+                <button atxButton iconLeft="check" type="button" [loading]="busy() === 'status'"
+                        (click)="statusChange.emit('FINISHED')">Finalizar chamado</button>
+              </div>
+            }
+            @case ('FINISHED') {
+              <p class="handling-text">
+                <atx-icon name="circle-check" [size]="15" />
+                Chamado finalizado em {{ ticket().updatedAt | dateTime }}.
+              </p>
+            }
+          }
+        </section>
+      }
+    </section>
+
+    <aside class="context" aria-label="Detalhes do chamado">
+      <atx-panel-section title="Detalhes do chamado">
+        <atx-detail-row label="Status"><atx-ticket-status [status]="ticket().status" /></atx-detail-row>
+        <atx-detail-row label="Data">{{ ticket().requestDate | longDate }}</atx-detail-row>
+        <atx-detail-row label="Setor">{{ ticket().sector }}</atx-detail-row>
+        <atx-detail-row label="Item">{{ ticket().itemName }}</atx-detail-row>
+        <atx-detail-row label="Etiqueta">{{ ticket().assetTag }}</atx-detail-row>
+        <atx-detail-row label="Solicitante">
+          <atx-avatar [name]="ticket().requesterName" [size]="20" />
+          {{ ticket().requesterName }}
+        </atx-detail-row>
+        <atx-detail-row label="Aberto em">{{ ticket().createdAt | dateTime }}</atx-detail-row>
+        <atx-detail-row label="Última alteração">{{ ticket().updatedAt | dateTime }}</atx-detail-row>
+      </atx-panel-section>
+
+      @if (canCancel()) {
+        <atx-panel-section title="Cancelar chamado">
+          <p class="note">Disponível enquanto ninguém iniciou o atendimento. O chamado é excluído do sistema.</p>
+          <button atxButton variant="danger" iconLeft="trash-2" type="button" [loading]="busy() === 'cancel'"
+                  (click)="cancelRequest.emit()">Cancelar chamado</button>
+        </atx-panel-section>
+      } @else if (ticket().status !== 'OPEN') {
+        <atx-panel-section>
+          <p class="note">
+            <atx-icon name="info" [size]="14" />
+            O atendimento já começou, então o chamado não pode mais ser cancelado.
+          </p>
+        </atx-panel-section>
+      }
+    </aside>
+  </div>
+</div>

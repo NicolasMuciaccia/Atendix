@@ -1,0 +1,7 @@
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font-sans);font-size:var(--text-base);line-height:var(--leading-normal);color:var(--text-body);background:var(--bg-app);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"cv11","ss01"}
+a{color:var(--text-link);text-decoration:none}
+a:hover{color:var(--text-link-hover);text-decoration:underline;text-underline-offset:2px}
+:focus-visible{outline:none;box-shadow:var(--focus-ring-strong)}
+::selection{background:var(--blue-200)}
