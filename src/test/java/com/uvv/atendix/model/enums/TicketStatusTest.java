@@ -11,7 +11,7 @@ class TicketStatusTest {
     @CsvSource({
             "OPEN, OPEN, false",
             "OPEN, IN_PROGRESS, true",
-            "OPEN, FINISHED, true",
+            "OPEN, FINISHED, false",
             "IN_PROGRESS, OPEN, false",
             "IN_PROGRESS, IN_PROGRESS, false",
             "IN_PROGRESS, FINISHED, true",

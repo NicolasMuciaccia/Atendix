@@ -5,9 +5,11 @@ import com.uvv.atendix.util.exception.BusinessConflictException;
 import com.uvv.atendix.util.exception.BusinessException;
 import com.uvv.atendix.util.exception.ForbiddenOperationException;
 import com.uvv.atendix.util.exception.ResourceNotFoundException;
+import com.uvv.atendix.util.exception.TooManyAttemptsException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -38,6 +40,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final String CONFLICT = "Conflito com o estado atual";
     private static final String CONCURRENT_UPDATE_MESSAGE =
             "O registro foi alterado por outra operação. Recarregue os dados e tente novamente.";
+    private static final String DUPLICATE_MESSAGE =
+            "Os dados conflitam com um registro já existente. Atualize a página e tente novamente.";
+    private static final String TOO_MANY_ATTEMPTS = "Muitas tentativas";
     private static final String BUSINESS_RULE = "Regra de negócio violada";
     private static final String INTERNAL_ERROR = "Erro interno do servidor";
     private static final String INTERNAL_MESSAGE = "Erro inesperado ao processar a requisição.";
@@ -95,6 +100,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessConflictException.class)
     public ResponseEntity<ApiErrorResponse> handleConflict(BusinessConflictException ex) {
         return respondWithMessage(HttpStatus.CONFLICT, CONFLICT, ex);
+    }
+
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyAttempts(TooManyAttemptsException ex) {
+        return respondWithMessage(HttpStatus.TOO_MANY_REQUESTS, TOO_MANY_ATTEMPTS, ex);
+    }
+
+    // Two requests creating the same login, name or code at the same moment pass the service check;
+    // the database constraint stops the second one
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        logByStatus(HttpStatus.CONFLICT, CONFLICT, ex);
+        return respond(HttpStatus.CONFLICT, CONFLICT, DUPLICATE_MESSAGE, null);
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)

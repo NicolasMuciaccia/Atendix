@@ -62,7 +62,9 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Login realizado; cookies de sessão gravados")
     @ApiResponse(responseCode = "400", description = "Login ou senha não informados",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "401", description = "Login ou senha inválidos",
+    @ApiResponse(responseCode = "401", description = "Login ou senha inválidos, ou conta desativada",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "429", description = "Login bloqueado temporariamente após várias senhas erradas",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "403", description = "Token CSRF ausente ou inválido",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))

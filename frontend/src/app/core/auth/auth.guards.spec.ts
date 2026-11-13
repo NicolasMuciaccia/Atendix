@@ -8,7 +8,7 @@ import { AuthStore } from './auth.store';
 
 const COMMON_USER: User = {
   id: 'b1c2', name: 'Usuário Comum', login: 'usuario', role: 'COMMON',
-  mustChangePassword: false, createdAt: '2026-11-07T12:00:00Z',
+  mustChangePassword: false, active: true, createdAt: '2026-11-07T12:00:00Z',
 };
 
 describe('auth guards', () => {

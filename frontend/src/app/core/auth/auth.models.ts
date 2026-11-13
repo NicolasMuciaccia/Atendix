@@ -6,6 +6,8 @@ export interface User {
   login: string;
   role: Role;
   mustChangePassword: boolean;
+  /** False when an administrator deactivated the account. */
+  active: boolean;
   createdAt: string;
 }
 

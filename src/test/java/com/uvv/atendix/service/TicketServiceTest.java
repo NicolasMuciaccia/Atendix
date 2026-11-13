@@ -25,12 +25,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +42,7 @@ import static org.mockito.Mockito.when;
 class TicketServiceTest {
 
     private static final Instant TOKEN_EXPIRES_AT = Instant.parse("2026-11-07T12:15:00Z");
+    private static final Instant NOW = Instant.parse("2026-11-07T12:00:00Z");
 
     @Mock
     private TicketRepository ticketRepository;
@@ -56,7 +60,8 @@ class TicketServiceTest {
 
     @BeforeEach
     void setUp() {
-        ticketService = new TicketService(ticketRepository, userRepository, itemRepository, new TicketMapper());
+        ticketService = new TicketService(ticketRepository, userRepository, itemRepository, new TicketMapper(),
+                Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -131,15 +136,42 @@ class TicketServiceTest {
     }
 
     @Test
-    void shouldMoveTicketToInProgress() {
+    void shouldStartHandlingInTheNameOfTheCurrentAdmin() {
         Ticket ticket = TicketFixtures.open(requester);
         when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
         when(ticketRepository.saveAndFlush(ticket)).thenReturn(ticket);
 
         TicketResponse response = ticketService.changeStatus(ticket.getId(),
-                new ChangeTicketStatusRequest(TicketStatus.IN_PROGRESS));
+                new ChangeTicketStatusRequest(TicketStatus.IN_PROGRESS), authenticated(admin));
 
         assertThat(response.status()).isEqualTo(TicketStatus.IN_PROGRESS);
+        assertThat(response.startedByName()).isEqualTo(admin.getName());
+        assertThat(response.startedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void shouldNotFinishTicketThatWasNotStarted() {
+        Ticket ticket = TicketFixtures.open(requester);
+        when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> ticketService.changeStatus(ticket.getId(),
+                new ChangeTicketStatusRequest(TicketStatus.FINISHED), authenticated(admin)))
+                .isInstanceOf(BusinessConflictException.class);
+        verify(ticketRepository, never()).saveAndFlush(any(Ticket.class));
+    }
+
+    @Test
+    void shouldNotOpenSecondTicketForItemStillBeingHandled() {
+        when(userRepository.findById(requester.getId())).thenReturn(Optional.of(requester));
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        when(ticketRepository.findFirstByItemIdAndStatusIn(eq(item.getId()), any()))
+                .thenReturn(Optional.of(TicketFixtures.open(requester)));
+
+        assertThatThrownBy(() -> ticketService.openTicket(createRequest(), authenticated(requester)))
+                .isInstanceOf(BusinessConflictException.class);
+        verify(ticketRepository, never()).save(any(Ticket.class));
     }
 
     private CreateTicketRequest createRequest() {

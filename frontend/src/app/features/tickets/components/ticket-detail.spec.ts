@@ -8,7 +8,18 @@ const TICKET: Ticket = {
   sectorId: 's-1', sector: 'Financeiro', assetTag: 'PAT-004512',
   problemDescription: 'Não puxa o papel da bandeja 2.', status: 'OPEN',
   requesterId: 'u-1', requesterName: 'Usuário Comum',
+  startedByName: null, startedAt: null, finishedByName: null, finishedAt: null,
   createdAt: '2026-11-05T13:02:00Z', updatedAt: '2026-11-05T13:02:00Z',
+};
+
+// What the API fills in at each step of the handling
+const HANDLING: Record<TicketStatus, Partial<Ticket>> = {
+  OPEN: {},
+  IN_PROGRESS: { startedByName: 'Administrador', startedAt: '2026-11-05T15:00:00Z' },
+  FINISHED: {
+    startedByName: 'Administrador', startedAt: '2026-11-05T15:00:00Z',
+    finishedByName: 'Administrador', finishedAt: '2026-11-05T16:20:00Z',
+  },
 };
 
 describe('TicketDetail', () => {
@@ -16,7 +27,7 @@ describe('TicketDetail', () => {
 
   async function render(status: TicketStatus, isAdmin: boolean, canCancel = false): Promise<HTMLElement> {
     fixture = TestBed.createComponent(TicketDetail);
-    fixture.componentRef.setInput('ticket', { ...TICKET, status });
+    fixture.componentRef.setInput('ticket', { ...TICKET, ...HANDLING[status], status });
     fixture.componentRef.setInput('isAdmin', isAdmin);
     fixture.componentRef.setInput('canCancel', canCancel);
     await fixture.whenStable();
@@ -31,10 +42,19 @@ describe('TicketDetail', () => {
     expect(STATUS_TONES).toEqual({ OPEN: 'positive', IN_PROGRESS: 'attention', FINISHED: 'danger' });
   });
 
-  it('should offer to start or finish an open ticket to the administrator', async () => {
+  it('should only offer to start the handling of an open ticket', async () => {
     const element = await render('OPEN', true);
 
-    expect(buttonTexts(element)).toEqual(expect.arrayContaining(['Iniciar atendimento', 'Finalizar']));
+    expect(buttonTexts(element)).toContain('Iniciar atendimento');
+    expect(buttonTexts(element).some(text => text.startsWith('Finalizar'))).toBe(false);
+  });
+
+  it('should show who handled the ticket and when', async () => {
+    const element = await render('FINISHED', true);
+
+    expect(element.textContent).toContain('Iniciado por');
+    expect(element.textContent).toContain('Finalizado por');
+    expect(element.querySelector('.handling-text')?.textContent).toContain('Finalizado por Administrador');
   });
 
   it('should not show the handling actions to a common user', async () => {

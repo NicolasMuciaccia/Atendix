@@ -24,6 +24,9 @@ public record UserResponse(
         @Schema(description = "Verdadeiro enquanto o usuário não trocar a senha inicial.", example = "true")
         boolean mustChangePassword,
 
+        @Schema(description = "Falso quando a conta foi desativada pelo administrador.", example = "true")
+        boolean active,
+
         @Schema(description = "Momento do cadastro, em UTC.", example = "2026-11-07T14:30:00Z")
         Instant createdAt) {
 }

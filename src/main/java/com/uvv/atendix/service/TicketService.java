@@ -5,15 +5,17 @@ import com.uvv.atendix.model.dto.TicketFilter;
 import com.uvv.atendix.model.entity.Item;
 import com.uvv.atendix.model.entity.Ticket;
 import com.uvv.atendix.model.entity.User;
+import com.uvv.atendix.model.enums.TicketStatus;
 import com.uvv.atendix.model.request.ChangeTicketStatusRequest;
 import com.uvv.atendix.model.request.CreateTicketRequest;
 import com.uvv.atendix.model.request.ListTicketsRequest;
 import com.uvv.atendix.model.response.PageResponse;
 import com.uvv.atendix.model.response.TicketResponse;
+import com.uvv.atendix.repository.ItemRepository;
 import com.uvv.atendix.repository.TicketRepository;
 import com.uvv.atendix.repository.TicketSpecifications;
-import com.uvv.atendix.repository.ItemRepository;
 import com.uvv.atendix.repository.UserRepository;
+import com.uvv.atendix.util.exception.BusinessConflictException;
 import com.uvv.atendix.util.exception.BusinessException;
 import com.uvv.atendix.util.exception.ForbiddenOperationException;
 import com.uvv.atendix.util.exception.ResourceNotFoundException;
@@ -24,6 +26,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -34,28 +39,38 @@ public class TicketService {
     // Tickets are always listed from the most recent to the oldest
     private static final Sort MOST_RECENT_FIRST =
             Sort.by(Sort.Order.desc("requestDate"), Sort.Order.desc("createdAt"));
+    // Statuses in which a ticket is still being worked on; an item has at most one of them
+    private static final List<TicketStatus> ACTIVE_STATUSES = List.of(TicketStatus.OPEN, TicketStatus.IN_PROGRESS);
+    private static final DateTimeFormatter BRAZILIAN_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private static final String TICKET_NOT_FOUND = "Chamado não encontrado: ";
     private static final String USER_NOT_FOUND = "Usuário não encontrado: ";
     private static final String SEARCH_REQUIRES_ADMIN = "Apenas administradores podem buscar chamados por data ou setor";
     private static final String ITEM_NOT_FOUND = "O item selecionado não existe mais. Atualize a página e escolha outro.";
+    private static final String ITEM_ALREADY_IN_TICKET =
+            "Este item já tem um chamado em andamento, aberto em %s. Acompanhe esse chamado em vez de abrir outro.";
+    private static final String CANNOT_REOPEN = "Um chamado não volta para o status aberto";
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
     private final TicketMapper ticketMapper;
+    private final Clock clock;
 
     public TicketService(TicketRepository ticketRepository, UserRepository userRepository,
-                         ItemRepository itemRepository, TicketMapper ticketMapper) {
+                         ItemRepository itemRepository, TicketMapper ticketMapper, Clock clock) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.itemRepository = itemRepository;
         this.ticketMapper = ticketMapper;
+        this.clock = clock;
     }
 
     @Transactional
     public TicketResponse openTicket(CreateTicketRequest request, AuthenticatedUser currentUser) {
         User requester = findUser(currentUser.id());
         Item item = findItem(request.itemId());
+        validateNoActiveTicket(item);
 
         Ticket savedTicket = ticketRepository.save(Ticket.open(requester, item, request.toDetails()));
 
@@ -91,15 +106,28 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponse changeStatus(UUID ticketId, ChangeTicketStatusRequest request) {
+    public TicketResponse changeStatus(UUID ticketId, ChangeTicketStatusRequest request, AuthenticatedUser currentUser) {
         Ticket ticket = findTicket(ticketId);
-        ticket.changeStatus(request.status());
+        User handler = findUser(currentUser.id());
+
+        switch (request.status()) {
+            case IN_PROGRESS -> ticket.startHandling(handler, clock.instant());
+            case FINISHED -> ticket.finish(handler, clock.instant());
+            case OPEN -> throw new BusinessConflictException(CANNOT_REOPEN);
+        }
 
         // Flushed now so the response carries the updated_at set by the auditing listener
         Ticket savedTicket = ticketRepository.saveAndFlush(ticket);
 
-        log.info("Ticket {} moved to status {}", savedTicket.getId(), savedTicket.getStatus());
+        log.info("Ticket {} moved to status {} by user {}", savedTicket.getId(), savedTicket.getStatus(), handler.getId());
         return ticketMapper.toResponse(savedTicket);
+    }
+
+    private void validateNoActiveTicket(Item item) {
+        ticketRepository.findFirstByItemIdAndStatusIn(item.getId(), ACTIVE_STATUSES).ifPresent(activeTicket -> {
+            throw new BusinessConflictException(
+                    ITEM_ALREADY_IN_TICKET.formatted(activeTicket.getRequestDate().format(BRAZILIAN_DATE)));
+        });
     }
 
     private void validateSearchPermission(ListTicketsRequest request, AuthenticatedUser currentUser) {

@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
@@ -52,7 +53,9 @@ public class SecurityConfig {
                                                    ApiAuthenticationEntryPoint authenticationEntryPoint,
                                                    ApiAccessDeniedHandler accessDeniedHandler) {
         http
-                .csrf(csrf -> csrf.spa())
+                // Every request authenticates from the cookie, so the default strategy would treat each one
+                // as a new login and replace the CSRF token; parallel requests then sent a stale header.
+                .csrf(csrf -> csrf.spa().sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)

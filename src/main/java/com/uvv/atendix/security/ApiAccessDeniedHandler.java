@@ -20,6 +20,8 @@ public class ApiAccessDeniedHandler implements AccessDeniedHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiAccessDeniedHandler.class);
 
     private static final String ERROR = "Acesso negado";
+    // Distinct "error" value so the front-end can fetch a new token and retry once
+    public static final String CSRF_ERROR = "Token CSRF inválido";
     private static final String FORBIDDEN_MESSAGE = "Você não tem permissão para executar esta operação.";
     private static final String PASSWORD_CHANGE_MESSAGE = "Troque a senha inicial antes de continuar.";
     private static final String CSRF_MESSAGE = "Token CSRF ausente ou inválido. Recarregue a página e tente novamente.";
@@ -35,17 +37,12 @@ public class ApiAccessDeniedHandler implements AccessDeniedHandler {
                        AccessDeniedException accessDeniedException) throws IOException {
         log.warn("{}: {} {} ({})", ERROR, request.getMethod(), request.getRequestURI(),
                 accessDeniedException.getClass().getSimpleName());
-        apiErrorWriter.write(response, HttpStatus.FORBIDDEN, ERROR, messageFor(accessDeniedException));
-    }
-
-    private String messageFor(AccessDeniedException exception) {
-        if (exception instanceof CsrfException) {
-            return CSRF_MESSAGE;
+        if (accessDeniedException instanceof CsrfException) {
+            apiErrorWriter.write(response, HttpStatus.FORBIDDEN, CSRF_ERROR, CSRF_MESSAGE);
+            return;
         }
-        if (isWaitingForPasswordChange()) {
-            return PASSWORD_CHANGE_MESSAGE;
-        }
-        return FORBIDDEN_MESSAGE;
+        apiErrorWriter.write(response, HttpStatus.FORBIDDEN, ERROR,
+                isWaitingForPasswordChange() ? PASSWORD_CHANGE_MESSAGE : FORBIDDEN_MESSAGE);
     }
 
     private boolean isWaitingForPasswordChange() {

@@ -56,6 +56,8 @@ public class TicketController {
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "403", description = "Senha inicial ainda não trocada ou token CSRF inválido",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "O item já tem um chamado aberto ou em andamento",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "422", description = "O item informado não existe",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public ResponseEntity<TicketResponse> openTicket(@RequestBody @Valid CreateTicketRequest request,
@@ -116,8 +118,8 @@ public class TicketController {
 
     @PatchMapping(ApiRoutes.TICKET_STATUS)
     @Operation(summary = "Altera o status de um chamado",
-            description = "Exclusivo do administrador. Transições permitidas: OPEN → IN_PROGRESS, "
-                    + "OPEN → FINISHED e IN_PROGRESS → FINISHED.")
+            description = "Exclusivo do administrador. Transições permitidas: OPEN → IN_PROGRESS e "
+                    + "IN_PROGRESS → FINISHED. Registra quem iniciou e quem finalizou o atendimento.")
     @ApiResponse(responseCode = "200", description = "Status alterado")
     @ApiResponse(responseCode = "400", description = "Status ausente ou desconhecido",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
@@ -131,7 +133,8 @@ public class TicketController {
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     public TicketResponse changeStatus(
             @Parameter(description = TICKET_ID_DESCRIPTION, example = TICKET_ID_EXAMPLE) @PathVariable UUID ticketId,
-            @RequestBody @Valid ChangeTicketStatusRequest request) {
-        return ticketService.changeStatus(ticketId, request);
+            @RequestBody @Valid ChangeTicketStatusRequest request,
+            AuthenticatedUser currentUser) {
+        return ticketService.changeStatus(ticketId, request, currentUser);
     }
 }

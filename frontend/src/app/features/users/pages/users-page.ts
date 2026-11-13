@@ -42,6 +42,7 @@ export class UsersPage {
   protected readonly createFieldErrors = signal<Record<string, string>>({});
   protected readonly createdUser = signal<User | null>(null);
   protected readonly resetTarget = signal<User | null>(null);
+  protected readonly deactivateTarget = signal<User | null>(null);
   protected readonly pendingUserId = signal<string | null>(null);
 
   constructor() {
@@ -78,6 +79,35 @@ export class UsersPage {
     } catch (error) {
       this.toast.show(errorMessageOf(error), 'danger');
       await this.store.load();
+    } finally {
+      this.pendingUserId.set(null);
+    }
+  }
+
+  /** Deactivating ends the person's sessions, so it asks first; reactivating does not. */
+  protected toggleActive(user: User): void {
+    if (user.active) {
+      this.deactivateTarget.set(user);
+      return;
+    }
+    void this.changeActive(user, true);
+  }
+
+  protected async confirmDeactivate(): Promise<void> {
+    const user = this.deactivateTarget();
+    this.deactivateTarget.set(null);
+    if (user) {
+      await this.changeActive(user, false);
+    }
+  }
+
+  private async changeActive(user: User, active: boolean): Promise<void> {
+    this.pendingUserId.set(user.id);
+    try {
+      await this.store.changeActive(user.id, active);
+      this.toast.show(active ? `Conta de ${user.name} reativada.` : `Conta de ${user.name} desativada.`);
+    } catch (error) {
+      this.toast.show(errorMessageOf(error), 'danger');
     } finally {
       this.pendingUserId.set(null);
     }

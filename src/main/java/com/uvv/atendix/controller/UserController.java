@@ -3,6 +3,7 @@ package com.uvv.atendix.controller;
 import com.uvv.atendix.ApiErrorResponse;
 import com.uvv.atendix.model.dto.AuthenticatedUser;
 import com.uvv.atendix.model.request.ChangeRoleRequest;
+import com.uvv.atendix.model.request.ChangeUserActiveRequest;
 import com.uvv.atendix.model.request.CreateUserRequest;
 import com.uvv.atendix.model.request.ListUsersRequest;
 import com.uvv.atendix.model.response.PageResponse;
@@ -102,6 +103,29 @@ public class UserController {
             @RequestBody @Valid ChangeRoleRequest request,
             AuthenticatedUser currentUser) {
         return userService.changeRole(userId, request, currentUser);
+    }
+
+    @PatchMapping("/{userId}/active")
+    @Operation(summary = "Ativa ou desativa um usuário",
+            description = "Exclusivo do administrador. A conta desativada não entra e tem as sessões encerradas; "
+                    + "os chamados dela continuam no histórico. A própria conta não pode ser desativada.")
+    @ApiResponse(responseCode = "200", description = "Situação da conta alterada")
+    @ApiResponse(responseCode = "400", description = "Payload inválido",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Sessão ausente, expirada ou inválida",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "Usuário não é administrador ou token CSRF inválido",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "422", description = "Tentativa de desativar a própria conta",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    public UserResponse changeActive(
+            @Parameter(description = "Identificador do usuário.", example = "8f14e45f-ceea-467a-9575-0f9a2c6e0b1d")
+            @PathVariable UUID userId,
+            @RequestBody @Valid ChangeUserActiveRequest request,
+            AuthenticatedUser currentUser) {
+        return userService.changeActive(userId, request, currentUser);
     }
 
     @PostMapping("/{userId}/password-reset")

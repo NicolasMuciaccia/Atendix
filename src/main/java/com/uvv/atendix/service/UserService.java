@@ -4,11 +4,13 @@ import com.uvv.atendix.AppProperties;
 import com.uvv.atendix.model.dto.AuthenticatedUser;
 import com.uvv.atendix.model.entity.User;
 import com.uvv.atendix.model.request.ChangeRoleRequest;
+import com.uvv.atendix.model.request.ChangeUserActiveRequest;
 import com.uvv.atendix.model.request.CreateUserRequest;
 import com.uvv.atendix.model.request.ListUsersRequest;
 import com.uvv.atendix.model.response.PageResponse;
 import com.uvv.atendix.model.response.UserResponse;
 import com.uvv.atendix.repository.UserRepository;
+import com.uvv.atendix.security.TokenService;
 import com.uvv.atendix.util.exception.BusinessConflictException;
 import com.uvv.atendix.util.exception.BusinessException;
 import com.uvv.atendix.util.exception.ResourceNotFoundException;
@@ -31,17 +33,20 @@ public class UserService {
     private static final String USER_NOT_FOUND = "Usuário não encontrado: ";
     private static final String LOGIN_TAKEN = "Já existe um usuário com este login";
     private static final String OWN_ROLE_CHANGE = "Não é permitido alterar o próprio perfil";
+    private static final String OWN_DEACTIVATION = "Não é permitido desativar a própria conta";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final TokenService tokenService;
     private final String initialPassword;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper,
-                       AppProperties appProperties) {
+                       TokenService tokenService, AppProperties appProperties) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.tokenService = tokenService;
         this.initialPassword = appProperties.users().initialPassword();
     }
 
@@ -69,11 +74,14 @@ public class UserService {
 
     @Transactional
     public UserResponse changeRole(UUID userId, ChangeRoleRequest request, AuthenticatedUser admin) {
-        validateNotOwnAccount(userId, admin);
+        validateNotOwnAccount(userId, admin, OWN_ROLE_CHANGE);
 
         User user = findUser(userId);
         user.assignRole(request.role());
         User savedUser = userRepository.save(user);
+
+        // Open sessions still carry the old role in their tokens
+        tokenService.revokeAllSessionsOf(userId);
 
         log.info("User {} had the role changed to {} by {}", savedUser.getId(), savedUser.getRole(), admin.id());
         return userMapper.toResponse(savedUser);
@@ -85,7 +93,26 @@ public class UserService {
         user.resetPassword(initialPasswordHash());
         userRepository.save(user);
 
+        tokenService.revokeAllSessionsOf(userId);
+
         log.info("User {} had the password reset to the initial one", userId);
+    }
+
+    @Transactional
+    public UserResponse changeActive(UUID userId, ChangeUserActiveRequest request, AuthenticatedUser admin) {
+        validateNotOwnAccount(userId, admin, OWN_DEACTIVATION);
+
+        User user = findUser(userId);
+        if (request.active()) {
+            user.activate();
+        } else {
+            user.deactivate();
+            tokenService.revokeAllSessionsOf(userId);
+        }
+        User savedUser = userRepository.save(user);
+
+        log.info("User {} set active={} by {}", userId, savedUser.isActive(), admin.id());
+        return userMapper.toResponse(savedUser);
     }
 
     private void validateLoginAvailable(String login) {
@@ -94,10 +121,10 @@ public class UserService {
         }
     }
 
-    // Keeps an administrator from demoting the account in use and locking everyone out
-    private void validateNotOwnAccount(UUID userId, AuthenticatedUser admin) {
+    // Keeps an administrator from demoting or deactivating the account in use and locking everyone out
+    private void validateNotOwnAccount(UUID userId, AuthenticatedUser admin, String message) {
         if (userId.equals(admin.id())) {
-            throw new BusinessException(OWN_ROLE_CHANGE);
+            throw new BusinessException(message);
         }
     }
 

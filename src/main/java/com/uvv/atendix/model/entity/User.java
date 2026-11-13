@@ -30,6 +30,9 @@ public class User extends BaseEntity {
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword;
 
+    @Column(name = "active", nullable = false)
+    private boolean active;
+
     protected User() {
         // required by JPA; callers use the register(...) factory
     }
@@ -46,6 +49,7 @@ public class User extends BaseEntity {
         user.role = role;
         user.passwordHash = initialPasswordHash;
         user.mustChangePassword = true;
+        user.active = true;
         return user;
     }
 
@@ -72,6 +76,14 @@ public class User extends BaseEntity {
 
     public boolean isAdmin() {
         return role == Role.ADMIN;
+    }
+
+    public void deactivate() {
+        active = false;
+    }
+
+    public void activate() {
+        active = true;
     }
 
     private static void requireRole(Role role) {
@@ -104,5 +116,9 @@ public class User extends BaseEntity {
 
     public boolean isMustChangePassword() {
         return mustChangePassword;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 }

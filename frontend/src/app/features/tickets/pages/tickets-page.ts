@@ -107,14 +107,24 @@ export class TicketsPage {
     }
   }
 
-  protected applyFilter(): void {
+  protected async applyFilter(): Promise<void> {
     const { date, sectorId } = this.filterForm.getRawValue();
-    void this.store.applyFilter(date, sectorId);
+    await this.store.applyFilter(date, sectorId);
+    this.closeSelectionOutsideResult();
   }
 
-  protected clearFilter(): void {
+  protected async clearFilter(): Promise<void> {
     this.filterForm.reset();
-    void this.store.clearFilter();
+    await this.store.clearFilter();
+    this.closeSelectionOutsideResult();
+  }
+
+  // The detail must match the list: a ticket the new search left out is no longer shown
+  private closeSelectionOutsideResult(): void {
+    const selectedId = this.chamado();
+    if (selectedId && !this.store.tickets().some(ticket => ticket.id === selectedId)) {
+      this.backToList();
+    }
   }
 
   protected backToList(): void {

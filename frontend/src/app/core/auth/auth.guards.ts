@@ -1,9 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthStore, LOGIN_PATH } from './auth.store';
-
-export const HOME_PATH = '/chamados';
-export const FIRST_ACCESS_PATH = '/primeiro-acesso';
+import { FIRST_ACCESS_PATH, HOME_PATH, LOGIN_PATH } from './auth.paths';
+import { AuthStore } from './auth.store';
 
 /** Only signed-in users who already replaced the initial password. */
 export const workspaceGuard: CanActivateFn = () => {

@@ -29,16 +29,16 @@
           <h3 class="handling-title" id="handling-title">Tratativa</h3>
           @switch (ticket().status) {
             @case ('OPEN') {
-              <p class="handling-text">Ninguém começou a atender este chamado ainda.</p>
+              <p class="handling-text">Ninguém começou a atender este chamado ainda. Inicie o atendimento para poder finalizá-lo.</p>
               <div class="handling-actions">
                 <button atxButton iconLeft="zap" type="button" [loading]="busy() === 'status'"
                         (click)="statusChange.emit('IN_PROGRESS')">Iniciar atendimento</button>
-                <button atxButton variant="secondary" iconLeft="check" type="button" [disabled]="busy() === 'status'"
-                        (click)="statusChange.emit('FINISHED')">Finalizar</button>
               </div>
             }
             @case ('IN_PROGRESS') {
-              <p class="handling-text">O atendimento está em andamento.</p>
+              <p class="handling-text">
+                Em andamento desde {{ ticket().startedAt! | dateTime }}, com {{ ticket().startedByName }}.
+              </p>
               <div class="handling-actions">
                 <button atxButton iconLeft="check" type="button" [loading]="busy() === 'status'"
                         (click)="statusChange.emit('FINISHED')">Finalizar chamado</button>
@@ -47,7 +47,7 @@
             @case ('FINISHED') {
               <p class="handling-text">
                 <atx-icon name="circle-check" [size]="15" />
-                Chamado finalizado em {{ ticket().updatedAt | dateTime }}.
+                Finalizado por {{ ticket().finishedByName }} em {{ ticket().finishedAt! | dateTime }}.
               </p>
             }
           }
@@ -67,7 +67,16 @@
           {{ ticket().requesterName }}
         </atx-detail-row>
         <atx-detail-row label="Aberto em">{{ ticket().createdAt | dateTime }}</atx-detail-row>
-        <atx-detail-row label="Última alteração">{{ ticket().updatedAt | dateTime }}</atx-detail-row>
+        @if (ticket().startedByName) {
+          <atx-detail-row label="Iniciado por">
+            {{ ticket().startedByName }} · {{ ticket().startedAt! | dateTime }}
+          </atx-detail-row>
+        }
+        @if (ticket().finishedByName) {
+          <atx-detail-row label="Finalizado por">
+            {{ ticket().finishedByName }} · {{ ticket().finishedAt! | dateTime }}
+          </atx-detail-row>
+        }
       </atx-panel-section>
 
       @if (canCancel()) {

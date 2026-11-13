@@ -12,6 +12,11 @@ export interface Ticket {
   status: TicketStatus;
   requesterId: string;
   requesterName: string;
+  /** Who started and who finished the handling; null until the ticket reaches that step. */
+  startedByName: string | null;
+  startedAt: string | null;
+  finishedByName: string | null;
+  finishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,13 +38,6 @@ export const STATUS_LABELS: Record<TicketStatus, string> = {
   OPEN: 'Aberto',
   IN_PROGRESS: 'Em andamento',
   FINISHED: 'Finalizado',
-};
-
-// Mirrors the back-end rule: a ticket only moves forward
-export const NEXT_STATUSES: Record<TicketStatus, TicketStatus[]> = {
-  OPEN: ['IN_PROGRESS', 'FINISHED'],
-  IN_PROGRESS: ['FINISHED'],
-  FINISHED: [],
 };
 
 /** Cancelling deletes the ticket, and only while nobody started handling it. */

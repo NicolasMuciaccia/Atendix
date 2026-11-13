@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -39,6 +40,20 @@ public class Ticket extends BaseEntity {
     @Column(name = "status", length = ColumnLengths.ENUM, nullable = false)
     private TicketStatus status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "started_by_id")
+    private User startedBy;
+
+    @Column(name = "started_at")
+    private Instant startedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "finished_by_id")
+    private User finishedBy;
+
+    @Column(name = "finished_at")
+    private Instant finishedAt;
+
     protected Ticket() {
         // required by JPA; callers use the open(...) factory
     }
@@ -63,13 +78,25 @@ public class Ticket extends BaseEntity {
         return ticket;
     }
 
-    public void changeStatus(TicketStatus target) {
-        if (target == null) {
-            throw new BusinessException("O novo status do chamado é obrigatório");
+    public void startHandling(User handler, Instant at) {
+        moveTo(TicketStatus.IN_PROGRESS, handler, at);
+        startedBy = handler;
+        startedAt = at;
+    }
+
+    public void finish(User handler, Instant at) {
+        moveTo(TicketStatus.FINISHED, handler, at);
+        finishedBy = handler;
+        finishedAt = at;
+    }
+
+    private void moveTo(TicketStatus target, User handler, Instant at) {
+        if (handler == null || at == null) {
+            throw new BusinessException("O responsável e o momento da tratativa são obrigatórios");
         }
         if (!status.canTransitionTo(target)) {
-            throw new BusinessConflictException(
-                    "Não é possível alterar o chamado " + getId() + " de " + status + " para " + target);
+            throw new BusinessConflictException("Não é possível alterar o chamado " + getId() + " de " + status
+                    + " para " + target + ". O atendimento precisa ser iniciado antes de ser finalizado.");
         }
         status = target;
     }
@@ -107,5 +134,21 @@ public class Ticket extends BaseEntity {
 
     public TicketStatus getStatus() {
         return status;
+    }
+
+    public User getStartedBy() {
+        return startedBy;
+    }
+
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public User getFinishedBy() {
+        return finishedBy;
+    }
+
+    public Instant getFinishedAt() {
+        return finishedAt;
     }
 }

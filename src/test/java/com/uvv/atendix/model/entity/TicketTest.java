@@ -36,36 +36,51 @@ class TicketTest {
     }
 
     @Test
-    void shouldMoveFromOpenToInProgress() {
+    void shouldRecordWhoStartedTheHandlingAndWhen() {
         Ticket ticket = TicketFixtures.open(requester);
+        User admin = UserFixtures.admin();
 
-        ticket.changeStatus(TicketStatus.IN_PROGRESS);
+        ticket.startHandling(admin, TicketFixtures.STARTED_AT);
 
         assertThat(ticket.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
+        assertThat(ticket.getStartedBy()).isSameAs(admin);
+        assertThat(ticket.getStartedAt()).isEqualTo(TicketFixtures.STARTED_AT);
     }
 
     @Test
-    void shouldFinishTicketDirectlyFromOpen() {
-        Ticket ticket = TicketFixtures.open(requester);
+    void shouldRecordWhoFinishedTheTicketAndWhen() {
+        Ticket ticket = TicketFixtures.inProgress(requester);
+        User admin = UserFixtures.admin();
 
-        ticket.changeStatus(TicketStatus.FINISHED);
+        ticket.finish(admin, TicketFixtures.FINISHED_AT);
 
         assertThat(ticket.getStatus()).isEqualTo(TicketStatus.FINISHED);
+        assertThat(ticket.getFinishedBy()).isSameAs(admin);
+        assertThat(ticket.getFinishedAt()).isEqualTo(TicketFixtures.FINISHED_AT);
     }
 
     @Test
-    void shouldNotReopenFinishedTicket() {
-        Ticket ticket = TicketFixtures.finished(requester);
+    void shouldNotFinishTicketThatNobodyStartedHandling() {
+        Ticket ticket = TicketFixtures.open(requester);
 
-        assertThatThrownBy(() -> ticket.changeStatus(TicketStatus.OPEN))
+        assertThatThrownBy(() -> ticket.finish(UserFixtures.admin(), TicketFixtures.FINISHED_AT))
+                .isInstanceOf(BusinessConflictException.class);
+        assertThat(ticket.getStatus()).isEqualTo(TicketStatus.OPEN);
+    }
+
+    @Test
+    void shouldNotStartHandlingTwice() {
+        Ticket ticket = TicketFixtures.inProgress(requester);
+
+        assertThatThrownBy(() -> ticket.startHandling(UserFixtures.admin(), TicketFixtures.STARTED_AT))
                 .isInstanceOf(BusinessConflictException.class);
     }
 
     @Test
-    void shouldNotMoveInProgressTicketBackToOpen() {
-        Ticket ticket = TicketFixtures.inProgress(requester);
+    void shouldNotChangeFinishedTicket() {
+        Ticket ticket = TicketFixtures.finished(requester);
 
-        assertThatThrownBy(() -> ticket.changeStatus(TicketStatus.OPEN))
+        assertThatThrownBy(() -> ticket.finish(UserFixtures.admin(), TicketFixtures.FINISHED_AT))
                 .isInstanceOf(BusinessConflictException.class);
     }
 

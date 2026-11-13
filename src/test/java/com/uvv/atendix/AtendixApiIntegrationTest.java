@@ -46,6 +46,8 @@ class AtendixApiIntegrationTest {
     private static final String INITIAL_PASSWORD = "mudar@123";
     private static final String NEW_PASSWORD = "Atendix#2026";
     private static final String ADMIN_LOGIN = "admin";
+    // app.security.login.max-failures in application.properties
+    private static final int MAX_LOGIN_FAILURES = 5;
     private static final String XSRF_COOKIE = "XSRF-TOKEN";
     private static final String XSRF_HEADER = "X-XSRF-TOKEN";
 
@@ -126,12 +128,111 @@ class AtendixApiIntegrationTest {
 
     @Test
     void shouldKeepSectorAndItemThatAreInUse() throws Exception {
-        openTicket(commonUserSession(), "2026-11-01", defaultItem.itemId());
+        CatalogEntry entry = registerItem();
+        openTicket(commonUserSession(), "2026-11-01", entry.itemId());
 
-        mockMvc.perform(delete(SECTORS + "/" + defaultItem.sectorId()).with(xsrf()).cookie(adminSession.cookies()))
+        mockMvc.perform(delete(SECTORS + "/" + entry.sectorId()).with(xsrf()).cookie(adminSession.cookies()))
                 .andExpect(status().isConflict());
-        mockMvc.perform(delete(ITEMS + "/" + defaultItem.itemId()).with(xsrf()).cookie(adminSession.cookies()))
+        mockMvc.perform(delete(ITEMS + "/" + entry.itemId()).with(xsrf()).cookie(adminSession.cookies()))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldKeepTheSameCsrfTokenAcrossAuthenticatedRequests() throws Exception {
+        mockMvc.perform(get(CURRENT_USER).cookie(adminSession.cookies()).cookie(xsrfCookie))
+                .andExpect(status().isOk())
+                .andExpect(cookie().doesNotExist(XSRF_COOKIE));
+        mockMvc.perform(get(TICKETS).cookie(adminSession.cookies()).cookie(xsrfCookie))
+                .andExpect(status().isOk())
+                .andExpect(cookie().doesNotExist(XSRF_COOKIE));
+    }
+
+    @Test
+    void shouldIdentifyCsrfRejectionsSoTheFrontEndCanRetry() throws Exception {
+        mockMvc.perform(post(LOGOUT).cookie(adminSession.cookies()).cookie(xsrfCookie)
+                        .header(XSRF_HEADER, "valor-desatualizado"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Token CSRF inválido"));
+    }
+
+    @Test
+    void shouldRequireStartingTheHandlingBeforeFinishing() throws Exception {
+        String ticketId = openTicket(commonUserSession(), "2026-11-04", registerItem().itemId());
+        String statusPath = TICKETS + "/" + ticketId + "/status";
+
+        mockMvc.perform(patch(statusPath).with(xsrf()).cookie(adminSession.cookies())
+                        .contentType(MediaType.APPLICATION_JSON).content(statusBody("FINISHED")))
+                .andExpect(status().isConflict());
+        mockMvc.perform(patch(statusPath).with(xsrf()).cookie(adminSession.cookies())
+                        .contentType(MediaType.APPLICATION_JSON).content(statusBody("IN_PROGRESS")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.startedByName").value("Administrador"))
+                .andExpect(jsonPath("$.startedAt").exists());
+        mockMvc.perform(patch(statusPath).with(xsrf()).cookie(adminSession.cookies())
+                        .contentType(MediaType.APPLICATION_JSON).content(statusBody("FINISHED")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.finishedByName").value("Administrador"))
+                .andExpect(jsonPath("$.finishedAt").exists());
+    }
+
+    @Test
+    void shouldNotOpenSecondTicketForItemStillBeingHandled() throws Exception {
+        Session requester = commonUserSession();
+        CatalogEntry entry = registerItem();
+        openTicket(requester, "2026-11-04", entry.itemId());
+
+        mockMvc.perform(post(TICKETS).with(xsrf()).cookie(requester.cookies())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ticketBody("2026-11-05", entry.itemId())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("04/11/2026")));
+    }
+
+    @Test
+    void shouldEndSessionsWhenTheAdminResetsThePassword() throws Exception {
+        Session user = commonUserSession();
+        String userId = currentUserId(user);
+
+        mockMvc.perform(post(USERS + "/" + userId + "/password-reset").with(xsrf()).cookie(adminSession.cookies()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get(CURRENT_USER).cookie(user.cookies()))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post(REFRESH).with(xsrf()).cookie(user.refreshToken()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldKeepDeactivatedUsersOut() throws Exception {
+        String login = createUser("COMMON");
+        Session user = changePassword(login(login, INITIAL_PASSWORD), INITIAL_PASSWORD);
+        String userId = currentUserId(user);
+
+        mockMvc.perform(patch(USERS + "/" + userId + "/active").with(xsrf()).cookie(adminSession.cookies())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"active\": false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(false));
+
+        mockMvc.perform(get(CURRENT_USER).cookie(user.cookies()))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post(LOGIN).with(xsrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody(login, NEW_PASSWORD)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Esta conta está desativada. Procure o administrador."));
+    }
+
+    @Test
+    void shouldBlockLoginAfterTooManyWrongPasswords() throws Exception {
+        String login = createUser("COMMON");
+        for (int attempt = 0; attempt < MAX_LOGIN_FAILURES; attempt++) {
+            mockMvc.perform(post(LOGIN).with(xsrf()).contentType(MediaType.APPLICATION_JSON)
+                            .content(loginBody(login, "senha-errada")))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(post(LOGIN).with(xsrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody(login, INITIAL_PASSWORD)))
+                .andExpect(status().isTooManyRequests());
     }
 
     @Test
@@ -253,7 +354,7 @@ class AtendixApiIntegrationTest {
     void shouldKeepTicketsPrivateBetweenCommonUsers() throws Exception {
         Session owner = commonUserSession();
         Session stranger = commonUserSession();
-        String ticketId = openTicket(owner, "2026-11-02", defaultItem.itemId());
+        String ticketId = openTicket(owner, "2026-11-02", registerItem().itemId());
 
         mockMvc.perform(get(TICKETS + "/" + ticketId).cookie(stranger.cookies()))
                 .andExpect(status().isNotFound());
@@ -268,7 +369,7 @@ class AtendixApiIntegrationTest {
         Session requester = commonUserSession();
         CatalogEntry entry = registerItem();
         String ticketId = openTicket(requester, "2026-11-03", entry.itemId());
-        String otherSectorTicket = openTicket(requester, "2026-11-03", defaultItem.itemId());
+        String otherSectorTicket = openTicket(requester, "2026-11-03", registerItem().itemId());
 
         mockMvc.perform(get(TICKETS).param("sectorId", entry.sectorId()).cookie(requester.cookies()))
                 .andExpect(status().isForbidden());
@@ -284,9 +385,9 @@ class AtendixApiIntegrationTest {
     @Test
     void shouldListTicketsFromTheMostRecentDate() throws Exception {
         Session requester = commonUserSession();
-        String oldest = openTicket(requester, "2026-10-01", defaultItem.itemId());
-        String newest = openTicket(requester, "2026-11-05", defaultItem.itemId());
-        String middle = openTicket(requester, "2026-10-20", defaultItem.itemId());
+        String oldest = openTicket(requester, "2026-10-01", registerItem().itemId());
+        String newest = openTicket(requester, "2026-11-05", registerItem().itemId());
+        String middle = openTicket(requester, "2026-10-20", registerItem().itemId());
 
         MvcResult result = mockMvc.perform(get(TICKETS).cookie(requester.cookies()))
                 .andExpect(status().isOk())
@@ -299,7 +400,7 @@ class AtendixApiIntegrationTest {
     @Test
     void shouldLetOnlyAdminChangeTicketStatus() throws Exception {
         Session requester = commonUserSession();
-        String ticketId = openTicket(requester, "2026-11-04", defaultItem.itemId());
+        String ticketId = openTicket(requester, "2026-11-04", registerItem().itemId());
 
         mockMvc.perform(patch(TICKETS + "/" + ticketId + "/status").with(xsrf()).cookie(requester.cookies())
                         .contentType(MediaType.APPLICATION_JSON).content(statusBody("IN_PROGRESS")))
@@ -315,7 +416,7 @@ class AtendixApiIntegrationTest {
     @Test
     void shouldDeleteTicketWhenCancelledBeforeHandling() throws Exception {
         Session requester = commonUserSession();
-        String ticketId = openTicket(requester, "2026-11-04", defaultItem.itemId());
+        String ticketId = openTicket(requester, "2026-11-04", registerItem().itemId());
 
         mockMvc.perform(delete(TICKETS + "/" + ticketId).with(xsrf()).cookie(requester.cookies()))
                 .andExpect(status().isNoContent());
@@ -347,6 +448,13 @@ class AtendixApiIntegrationTest {
 
     private Session commonUserSession() throws Exception {
         return changePassword(login(createUser("COMMON"), INITIAL_PASSWORD), INITIAL_PASSWORD);
+    }
+
+    private String currentUserId(Session session) throws Exception {
+        MvcResult result = mockMvc.perform(get(CURRENT_USER).cookie(session.cookies()))
+                .andExpect(status().isOk())
+                .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
     private String createUser(String role) throws Exception {

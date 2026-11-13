@@ -60,7 +60,9 @@
               }
             </span>
             <span role="cell" class="cell" data-label="Situação">
-              @if (user.mustChangePassword) {
+              @if (!user.active) {
+                <atx-tag [dot]="true">Desativada</atx-tag>
+              } @else if (user.mustChangePassword) {
                 <atx-tag tone="attention" [dot]="true">Aguardando 1º acesso</atx-tag>
               } @else {
                 <atx-tag tone="positive" [dot]="true">Senha definida</atx-tag>
@@ -70,8 +72,13 @@
             <span role="cell" class="actions">
               @if (user.id !== currentUserId()) {
                 <button atxButton variant="ghost" size="sm" iconLeft="refresh-cw" type="button"
-                        [loading]="pendingUserId() === user.id" (click)="resetTarget.set(user)">
+                        [disabled]="pendingUserId() === user.id" (click)="resetTarget.set(user)">
                   Redefinir senha
+                </button>
+                <button atxButton variant="ghost" size="sm" type="button"
+                        [iconLeft]="user.active ? 'lock' : 'check'" [loading]="pendingUserId() === user.id"
+                        (click)="toggleActive(user)">
+                  {{ user.active ? 'Desativar' : 'Reativar' }}
                 </button>
               }
             </span>
@@ -112,8 +119,17 @@
   </div>
 </atx-dialog>
 
+<atx-dialog [open]="!!deactivateTarget()" title="Desativar conta?"
+            [description]="(deactivateTarget()?.name ?? '') + ' não conseguirá mais entrar e as sessões abertas serão encerradas. Os chamados continuam no histórico, e a conta pode ser reativada depois.'"
+            (closed)="deactivateTarget.set(null)">
+  <div dialogActions>
+    <button atxButton variant="secondary" type="button" (click)="deactivateTarget.set(null)">Cancelar</button>
+    <button atxButton variant="danger" iconLeft="lock" type="button" (click)="confirmDeactivate()">Desativar conta</button>
+  </div>
+</atx-dialog>
+
 <atx-dialog [open]="!!resetTarget()" title="Redefinir senha?"
-            [description]="'A senha de ' + (resetTarget()?.name ?? '') + ' volta para a inicial e a troca será pedida no próximo acesso.'"
+            [description]="'A senha de ' + (resetTarget()?.name ?? '') + ' volta para a inicial, as sessões abertas são encerradas e a troca será pedida no próximo acesso.'"
             (closed)="resetTarget.set(null)">
   <div dialogActions>
     <button atxButton variant="secondary" type="button" (click)="resetTarget.set(null)">Cancelar</button>

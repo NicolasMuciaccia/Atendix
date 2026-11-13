@@ -4,7 +4,7 @@ Atendix é um help desk web para abrir e acompanhar chamados de reparo de equipa
 
 **Abertura de chamados:** o usuário escolhe a etiqueta (ou setor e item), informa a data e a descrição; o chamado nasce com status Aberto e aparece no relatório, do mais recente para o mais antigo.
 
-**Tratativa pelo administrador:** o administrador inicia o atendimento e finaliza o chamado; enquanto ninguém começou a atender, quem abriu pode cancelar, e o chamado é excluído.
+**Tratativa pelo administrador:** o administrador inicia o atendimento e só depois finaliza o chamado; o sistema registra quem iniciou, quem finalizou e quando. Enquanto ninguém começou a atender, quem abriu pode cancelar, e o chamado é excluído. Cada item tem no máximo um chamado aberto ou em andamento por vez.
 
 **Cadastros:** setores, etiquetas e itens são cadastrados pelo administrador; cada item fica em um setor e tem uma etiqueta exclusiva.
 
@@ -41,7 +41,7 @@ cp .env.example .env
 | `DB_USER` | Usuário do banco | `atendix` |
 | `DB_PASSWORD` | Senha do banco (escolha uma) | — |
 | `JWT_SECRET` | Segredo dos tokens, com no mínimo 32 caracteres | gere com `openssl rand -base64 48` |
-| `COOKIE_SECURE` | Cookies só por HTTPS ou localhost | `true` |
+| `COOKIE_SECURE` | Cookies só por HTTPS ou localhost. Use `false` para acessar pelo IP da rede local (ex.: `http://192.168.0.10:4200`); com `true`, o navegador descarta os cookies de sessão nesse caso | `true` |
 
 O `.env` não vai para o repositório. O banco e a API leem o mesmo arquivo.
 
@@ -123,6 +123,14 @@ No primeiro login de cada conta, o sistema pede uma senha pessoal: de 8 a 128 ca
 
 Contas criadas pelo administrador também nascem com `mudar@123`. Se alguém esquecer a senha, o administrador usa **Redefinir senha** e ela volta a ser `mudar@123`, com a troca exigida no próximo acesso.
 
+**Regras de acesso**
+
+- Depois de **5 senhas erradas** para o mesmo login, ele fica bloqueado por **15 minutos** (configurável em `app.security.login.*`).
+- Uma conta **desativada** pelo administrador não entra; os chamados dela continuam no histórico e ela pode ser reativada.
+- Redefinir a senha, mudar o perfil ou desativar uma conta **encerra na hora** as sessões abertas dessa pessoa. Trocar a própria senha encerra as sessões em outros dispositivos.
+
+**Duas contas ao mesmo tempo.** A sessão fica em cookies, que são do navegador inteiro e não de cada aba. Entrar com outra conta numa aba troca a conta de todas as abas abertas, e elas acompanham sozinhas (o mesmo vale para o logout). Para usar o admin e o usuário comum lado a lado, abra o segundo em uma janela anônima ou em outro navegador.
+
 ---
 
 ## Perfis e permissões
@@ -138,6 +146,7 @@ O perfil é gravado como número: `0` para usuário comum e `1` para administrad
 | Iniciar atendimento e finalizar chamado | Não | Sim |
 | Cadastrar e editar setores, etiquetas e itens | Não | Sim |
 | Cadastrar usuários, mudar perfil e redefinir senha | Não | Sim (menos o próprio perfil) |
+| Desativar e reativar contas | Não | Sim (menos a própria) |
 
 ### Cores de status
 
@@ -163,7 +172,7 @@ A API usa **tokens em cookies**. Não há header `Authorization`: depois do logi
 
 Os dois primeiros são `HttpOnly`, `Secure` e `SameSite=Strict`: scripts da página não conseguem lê-los.
 
-**Proteção contra CSRF.** Toda requisição que altera dados (POST, PUT, PATCH, DELETE), inclusive o login, precisa repetir o valor do cookie `XSRF-TOKEN` no header `X-XSRF-TOKEN`. O cookie é emitido por `GET /api/v1/auth/csrf` e **muda a cada requisição**, por isso o valor deve ser lido do cookie atual antes de cada chamada. A interface web faz isso automaticamente.
+**Proteção contra CSRF.** Toda requisição que altera dados (POST, PUT, PATCH, DELETE), inclusive o login, precisa repetir o valor do cookie `XSRF-TOKEN` no header `X-XSRF-TOKEN`. O cookie é emitido por `GET /api/v1/auth/csrf` e se mantém durante a navegação. Se uma requisição for recusada por CSRF, a resposta vem com `"error": "Token CSRF inválido"`; a interface web busca um token novo e repete a requisição uma única vez, automaticamente.
 
 **Renovação.** Quando o token de acesso expira, `POST /api/v1/auth/refresh` troca o token de renovação por um par novo. Cada token de renovação vale uma única vez.
 
@@ -234,6 +243,7 @@ Login aceito. Se `mustChangePassword` vier `true`, o próximo passo é trocar a 
   "login": "admin",
   "role": "ADMIN",
   "mustChangePassword": true,
+  "active": true,
   "createdAt": "2026-11-07T12:57:52Z"
 }
 ```
@@ -244,8 +254,9 @@ Login aceito. Se `mustChangePassword` vier `true`, o próximo passo é trocar a 
 |---|---|
 | `200 OK` | Login realizado; cookies gravados |
 | `400 Bad Request` | Login ou senha não informados |
-| `401 Unauthorized` | Login ou senha inválidos |
+| `401 Unauthorized` | Login ou senha inválidos, ou conta desativada |
 | `403 Forbidden` | Header `X-XSRF-TOKEN` ausente ou diferente do cookie |
+| `429 Too Many Requests` | Login bloqueado por 15 minutos após 5 senhas erradas |
 
 ### `POST /api/v1/auth/refresh`
 
@@ -305,6 +316,7 @@ Senha trocada; `mustChangePassword` passa a `false`.
   "login": "admin",
   "role": "ADMIN",
   "mustChangePassword": false,
+  "active": true,
   "createdAt": "2026-11-07T12:57:52Z"
 }
 ```
@@ -369,6 +381,7 @@ Usuário criado; o header `Location` aponta para ele.
   "login": "maria.souza",
   "role": "COMMON",
   "mustChangePassword": true,
+  "active": true,
   "createdAt": "2026-11-07T13:10:00Z"
 }
 ```
@@ -412,6 +425,7 @@ Lista os usuários em ordem de nome. Exclusivo do administrador.
       "login": "maria.souza",
       "role": "COMMON",
       "mustChangePassword": true,
+      "active": true,
       "createdAt": "2026-11-07T13:10:00Z"
     }
   ],
@@ -433,7 +447,7 @@ Lista os usuários em ordem de nome. Exclusivo do administrador.
 
 ### `PATCH /api/v1/users/{userId}/role`
 
-Muda o perfil de um usuário. Exclusivo do administrador; o próprio perfil não pode ser alterado.
+Muda o perfil de um usuário. Exclusivo do administrador; o próprio perfil não pode ser alterado. As sessões abertas da pessoa são encerradas, para que o perfil novo valha na hora.
 
 #### Parâmetros
 
@@ -472,7 +486,7 @@ Usuário com o perfil novo, no mesmo formato do cadastro.
 
 ### `POST /api/v1/users/{userId}/password-reset`
 
-Volta a senha do usuário para a inicial e exige a troca no próximo acesso. Exclusivo do administrador. Sem corpo.
+Volta a senha do usuário para a inicial, encerra as sessões abertas dele e exige a troca no próximo acesso. Exclusivo do administrador. Sem corpo.
 
 #### Parâmetros
 
@@ -488,6 +502,45 @@ Volta a senha do usuário para a inicial e exige a troca no próximo acesso. Exc
 | `401 Unauthorized` | Sessão ausente, expirada ou inválida |
 | `403 Forbidden` | Usuário não é administrador ou token CSRF inválido |
 | `404 Not Found` | Usuário não encontrado |
+
+### `PATCH /api/v1/users/{userId}/active`
+
+Desativa ou reativa uma conta. Exclusivo do administrador; a própria conta não pode ser desativada. A conta desativada não entra e tem as sessões encerradas na hora; os chamados dela continuam no histórico.
+
+#### Parâmetros
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `userId` | `UUID` | Sim | Identificador do usuário |
+
+#### Request Body
+
+Arquivo: `desativar-usuario.json`
+
+```json
+{
+  "active": false
+}
+```
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `active` | `boolean` | Sim | `true` para ativar, `false` para desativar |
+
+#### Response — `200 OK`
+
+Usuário com a situação nova, no mesmo formato do cadastro (`"active": false` quando desativado).
+
+#### Status codes
+
+| Código | Situação |
+|---|---|
+| `200 OK` | Situação da conta alterada |
+| `400 Bad Request` | Payload inválido |
+| `401 Unauthorized` | Sessão ausente, expirada ou inválida |
+| `403 Forbidden` | Usuário não é administrador ou token CSRF inválido |
+| `404 Not Found` | Usuário não encontrado |
+| `422 Unprocessable Content` | Tentativa de desativar a própria conta |
 
 ### Setores
 
@@ -774,7 +827,7 @@ Exclui um item sem chamados; a etiqueta dele fica livre.
 
 ### `POST /api/v1/tickets`
 
-Abre um chamado para um item cadastrado. Setor e etiqueta vêm do item; o status começa em `OPEN`.
+Abre um chamado para um item cadastrado. Setor e etiqueta vêm do item; o status começa em `OPEN`. Um item só pode ter um chamado aberto ou em andamento por vez.
 
 #### Request Body
 
@@ -811,6 +864,10 @@ Chamado aberto; o header `Location` aponta para ele.
   "status": "OPEN",
   "requesterId": "4c1a9e7b-2d3f-4b5a-8c6d-7e8f9a0b1c2d",
   "requesterName": "Usuário Comum",
+  "startedByName": null,
+  "startedAt": null,
+  "finishedByName": null,
+  "finishedAt": null,
   "createdAt": "2026-11-07T14:30:00Z",
   "updatedAt": "2026-11-07T14:30:00Z"
 }
@@ -824,6 +881,7 @@ Chamado aberto; o header `Location` aponta para ele.
 | `400 Bad Request` | Payload inválido (inclui data no futuro) |
 | `401 Unauthorized` | Sessão ausente, expirada ou inválida |
 | `403 Forbidden` | Senha inicial ainda não trocada ou token CSRF inválido |
+| `409 Conflict` | O item já tem um chamado aberto ou em andamento |
 | `422 Unprocessable Content` | O item informado não existe |
 
 ### `GET /api/v1/tickets`
@@ -858,6 +916,10 @@ Página de chamados, com cada item no formato da abertura.
       "status": "IN_PROGRESS",
       "requesterId": "4c1a9e7b-2d3f-4b5a-8c6d-7e8f9a0b1c2d",
       "requesterName": "Usuário Comum",
+      "startedByName": "Administrador",
+      "startedAt": "2026-11-07T15:00:00Z",
+      "finishedByName": null,
+      "finishedAt": null,
       "createdAt": "2026-11-07T14:30:00Z",
       "updatedAt": "2026-11-07T15:05:00Z"
     }
@@ -912,7 +974,7 @@ Cancela um chamado ainda `OPEN`. O chamado cancelado é excluído do sistema.
 
 ### `PATCH /api/v1/tickets/{ticketId}/status`
 
-Altera o status de um chamado. Exclusivo do administrador.
+Altera o status de um chamado. Exclusivo do administrador. O atendimento precisa ser iniciado (`IN_PROGRESS`) antes de ser finalizado (`FINISHED`); cada passo registra quem fez e quando (`startedByName`/`startedAt` e `finishedByName`/`finishedAt`).
 
 #### Request Body
 
@@ -941,13 +1003,13 @@ Chamado com o status novo, no formato da abertura.
 | `401 Unauthorized` | Sessão ausente, expirada ou inválida |
 | `403 Forbidden` | Usuário não é administrador ou token CSRF inválido |
 | `404 Not Found` | Chamado não encontrado |
-| `409 Conflict` | Transição de status não permitida |
+| `409 Conflict` | Transição de status não permitida (por exemplo, finalizar sem iniciar) |
 
 #### Ciclo de vida do `status`
 
 | Valor | Descrição | Pode ir para |
 |---|---|---|
-| `OPEN` | Aberto; ninguém começou a atender. Único status em que o chamado pode ser cancelado | `IN_PROGRESS`, `FINISHED` |
+| `OPEN` | Aberto; ninguém começou a atender. Único status em que o chamado pode ser cancelado | `IN_PROGRESS` |
 | `IN_PROGRESS` | Em andamento | `FINISHED` |
 | `FINISHED` | Finalizado; não muda mais | — |
 
@@ -976,7 +1038,7 @@ flowchart LR
     linkStyle 2,3,7,8 stroke:#10B981,stroke-width:2px
 ```
 
-O desenho representa somente o sucesso. Data no futuro, campo vazio ou item inexistente encerram o fluxo no passo 6, antes da gravação.
+O desenho representa somente o sucesso. Data no futuro, campo vazio, item inexistente ou item que já tem um chamado aberto ou em andamento encerram o fluxo no passo 6, antes da gravação.
 
 ## Tratativa pelo administrador
 
@@ -991,7 +1053,7 @@ flowchart LR
     API -.->|4. Página de chamados| ADMIN
     ADMIN -->|5. PATCH /status IN_PROGRESS e depois FINISHED| API
     API -->|6. Confere se a transição é permitida| API
-    API -->|7. Grava o novo status| BANCO
+    API -->|7. Grava o status, quem fez e quando| BANCO
     BANCO -.->|8. Status gravado| API
     API -.->|9. HTTP 200 com o chamado atualizado| ADMIN
     classDef sistema fill:#F8FAFC,stroke:#64748B,color:#0F172A,stroke-width:2px
@@ -1001,7 +1063,7 @@ flowchart LR
     linkStyle 2,3,7,8 stroke:#10B981,stroke-width:2px
 ```
 
-O desenho representa somente o sucesso. Uma transição para trás (por exemplo, de Finalizado para Aberto) encerra o fluxo no passo 6 com `409`.
+O desenho representa somente o sucesso. Finalizar um chamado que ninguém iniciou, ou voltar um status (por exemplo, de Finalizado para Aberto), encerra o fluxo no passo 6 com `409`.
 
 ## Primeiro acesso
 
@@ -1122,13 +1184,57 @@ Todas as respostas de erro seguem o mesmo formato padronizado, independente do t
 }
 ```
 
+**Finalizar um chamado que ninguém iniciou — `409 Conflict`**
+```json
+{
+  "timestamp": "2026-11-07T11:52:10.441093",
+  "status": 409,
+  "error": "Conflito com o estado atual",
+  "message": "Não é possível alterar o chamado 8f14e45f-ceea-467a-9575-0f9a2c6e0b1d de OPEN para FINISHED. O atendimento precisa ser iniciado antes de ser finalizado.",
+  "fields": null
+}
+```
+
+**Segundo chamado para um item ainda em atendimento — `409 Conflict`**
+```json
+{
+  "timestamp": "2026-11-07T11:53:02.180557",
+  "status": 409,
+  "error": "Conflito com o estado atual",
+  "message": "Este item já tem um chamado em andamento, aberto em 07/11/2026. Acompanhe esse chamado em vez de abrir outro.",
+  "fields": null
+}
+```
+
+**Login bloqueado após várias senhas erradas — `429 Too Many Requests`**
+```json
+{
+  "timestamp": "2026-11-07T11:54:40.902117",
+  "status": 429,
+  "error": "Muitas tentativas",
+  "message": "Muitas tentativas de login sem sucesso. Aguarde 15 minutos e tente novamente.",
+  "fields": null
+}
+```
+
+**Token CSRF ausente ou desatualizado — `403 Forbidden`**
+```json
+{
+  "timestamp": "2026-11-07T11:55:12.334812",
+  "status": 403,
+  "error": "Token CSRF inválido",
+  "message": "Token CSRF ausente ou inválido. Recarregue a página e tente novamente.",
+  "fields": null
+}
+```
+
 ---
 
 ## Exemplos de chamada
 
 Exemplos para Bash/Git Bash, falando direto com a API na porta 8080. Salve cada payload da seção [Endpoints](#endpoints) com o nome de arquivo indicado e rode os comandos na mesma pasta.
 
-Como a autenticação é por cookies, os comandos guardam a sessão em `cookies.txt`. O token CSRF muda a cada requisição, então a função `xsrf` lê o valor atual do arquivo antes de cada chamada que altera dados. Os comandos que exigem administrador usam a sessão de um login como `admin`; os UUIDs nos caminhos são os devolvidos pelas chamadas anteriores.
+Como a autenticação é por cookies, os comandos guardam a sessão em `cookies.txt`. A função `xsrf` lê o token CSRF atual do arquivo para repeti-lo no header de cada chamada que altera dados. Os comandos que exigem administrador usam a sessão de um login como `admin`; os UUIDs nos caminhos são os devolvidos pelas chamadas anteriores.
 
 <details>
 <summary>Local</summary>
@@ -1178,6 +1284,13 @@ curl --request PATCH 'http://localhost:8080/api/v1/users/0b7c4e2a-31d5-4f6a-8e9b
   --header "X-XSRF-TOKEN: $(xsrf)" \
   --header 'Content-Type: application/json' \
   --data-binary '@alterar-perfil.json'
+
+curl --request PATCH 'http://localhost:8080/api/v1/users/0b7c4e2a-31d5-4f6a-8e9b-2c3d4e5f6a7b/active' \
+  --cookie cookies.txt \
+  --cookie-jar cookies.txt \
+  --header "X-XSRF-TOKEN: $(xsrf)" \
+  --header 'Content-Type: application/json' \
+  --data-binary '@desativar-usuario.json'
 
 curl --request POST 'http://localhost:8080/api/v1/users/0b7c4e2a-31d5-4f6a-8e9b-2c3d4e5f6a7b/password-reset' \
   --cookie cookies.txt \

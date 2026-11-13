@@ -44,7 +44,14 @@ export class UsersStore {
   }
 
   async changeRole(userId: string, role: Role): Promise<void> {
-    const updated = await firstValueFrom(this.userService.changeRole(userId, role));
+    this.replace(await firstValueFrom(this.userService.changeRole(userId, role)));
+  }
+
+  async changeActive(userId: string, active: boolean): Promise<void> {
+    this.replace(await firstValueFrom(this.userService.changeActive(userId, active)));
+  }
+
+  private replace(updated: User): void {
     this._page.update(page => page && {
       ...page,
       content: page.content.map(user => (user.id === updated.id ? updated : user)),

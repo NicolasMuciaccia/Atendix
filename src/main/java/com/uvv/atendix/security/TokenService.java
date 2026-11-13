@@ -83,6 +83,11 @@ public class TokenService {
         tokenDenylist.revoke(tokenId, expiresAt);
     }
 
+    /** Ends every open session of the user, in any browser or device. */
+    public void revokeAllSessionsOf(UUID userId) {
+        tokenDenylist.revokeAllOf(userId);
+    }
+
     public void revokeAccessTokenIfActive(String accessToken) {
         decodeIfActive(accessTokenDecoder::decode, accessToken).ifPresent(this::revoke);
     }
@@ -114,6 +119,7 @@ public class TokenService {
                 .subject(user.getId().toString())
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plus(ttl))
+                .claim(TokenClaims.ISSUED_AT_MILLIS, issuedAt.toEpochMilli())
                 .claim(TokenClaims.TOKEN_TYPE, type.name());
     }
 

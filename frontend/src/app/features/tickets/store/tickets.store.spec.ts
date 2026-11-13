@@ -10,6 +10,7 @@ const TICKET: Ticket = {
   sectorId: 's-1', sector: 'Financeiro', assetTag: 'PAT-004512',
   problemDescription: 'Não puxa o papel da bandeja 2.', status: 'OPEN',
   requesterId: 'u-1', requesterName: 'Usuário Comum',
+  startedByName: null, startedAt: null, finishedByName: null, finishedAt: null,
   createdAt: '2026-11-05T13:02:00Z', updatedAt: '2026-11-05T13:02:00Z',
 };
 
@@ -59,6 +60,20 @@ describe('TicketsStore', () => {
     expect(request.request.params.get('sectorId')).toBe('s-1');
     expect(request.request.params.has('date')).toBe(false);
     expect(store.hasFilters()).toBe(true);
+  });
+
+  it('should not fetch a selected ticket that a search left out', async () => {
+    const load = store.load();
+    backend.expectOne(request => request.url === '/api/v1/tickets').flush(pageOf(TICKET));
+    await load;
+    await store.select(TICKET.id);
+
+    const filter = store.applyFilter('2026-01-01', null);
+    backend.expectOne(request => request.url === '/api/v1/tickets').flush(pageOf());
+    await filter;
+
+    backend.expectNone(`/api/v1/tickets/${TICKET.id}`);
+    expect(store.selected()).toBeNull();
   });
 
   it('should replace the ticket in place when its status changes', async () => {

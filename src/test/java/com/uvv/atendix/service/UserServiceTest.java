@@ -6,9 +6,11 @@ import com.uvv.atendix.model.entity.User;
 import com.uvv.atendix.model.entity.UserFixtures;
 import com.uvv.atendix.model.enums.Role;
 import com.uvv.atendix.model.request.ChangeRoleRequest;
+import com.uvv.atendix.model.request.ChangeUserActiveRequest;
 import com.uvv.atendix.model.request.CreateUserRequest;
 import com.uvv.atendix.model.response.UserResponse;
 import com.uvv.atendix.repository.UserRepository;
+import com.uvv.atendix.security.TokenService;
 import com.uvv.atendix.util.exception.BusinessConflictException;
 import com.uvv.atendix.util.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,12 +42,52 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TokenService tokenService;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, passwordEncoder, new UserMapper(),
+        userService = new UserService(userRepository, passwordEncoder, new UserMapper(), tokenService,
                 TestProperties.appProperties());
+    }
+
+    @Test
+    void shouldEndSessionsOfDeactivatedUser() {
+        User user = UserFixtures.common();
+        User admin = UserFixtures.admin();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        UserResponse response = userService.changeActive(user.getId(), new ChangeUserActiveRequest(false),
+                new AuthenticatedUser(admin.getId(), Role.ADMIN, "token-id", TOKEN_EXPIRES_AT));
+
+        assertThat(response.active()).isFalse();
+        verify(tokenService).revokeAllSessionsOf(user.getId());
+    }
+
+    @Test
+    void shouldNotLetAdminDeactivateOwnAccount() {
+        User admin = UserFixtures.admin();
+        AuthenticatedUser currentAdmin = new AuthenticatedUser(admin.getId(), Role.ADMIN, "token-id", TOKEN_EXPIRES_AT);
+
+        assertThatThrownBy(() -> userService.changeActive(admin.getId(), new ChangeUserActiveRequest(false), currentAdmin))
+                .isInstanceOf(BusinessException.class);
+        verify(tokenService, never()).revokeAllSessionsOf(any());
+    }
+
+    @Test
+    void shouldEndSessionsWhenRoleChanges() {
+        User user = UserFixtures.common();
+        User admin = UserFixtures.admin();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        userService.changeRole(user.getId(), new ChangeRoleRequest(Role.ADMIN),
+                new AuthenticatedUser(admin.getId(), Role.ADMIN, "token-id", TOKEN_EXPIRES_AT));
+
+        verify(tokenService).revokeAllSessionsOf(user.getId());
     }
 
     @Test
@@ -90,5 +132,6 @@ class UserServiceTest {
 
         assertThat(user.isMustChangePassword()).isTrue();
         assertThat(passwordEncoder.matches(TestProperties.INITIAL_PASSWORD, user.getPasswordHash())).isTrue();
+        verify(tokenService).revokeAllSessionsOf(user.getId());
     }
 }

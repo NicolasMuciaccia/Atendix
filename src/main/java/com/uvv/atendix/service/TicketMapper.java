@@ -24,7 +24,16 @@ public class TicketMapper {
                 ticket.getStatus(),
                 requester.getId(),
                 requester.getName(),
+                nameOf(ticket.getStartedBy()),
+                ticket.getStartedAt(),
+                nameOf(ticket.getFinishedBy()),
+                ticket.getFinishedAt(),
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt());
+    }
+
+    // The handling fields stay empty until the ticket reaches that step
+    private String nameOf(User user) {
+        return user == null ? null : user.getName();
     }
 }

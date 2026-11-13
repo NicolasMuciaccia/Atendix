@@ -19,7 +19,14 @@ public record AppProperties(
     public record Security(
             @Valid @NotNull Jwt jwt,
             @Valid @NotNull Cookie cookie,
-            @Valid @NotNull Argon2 argon2) {
+            @Valid @NotNull Argon2 argon2,
+            @Valid @NotNull Login login) {
+    }
+
+    /** Guessing protection: after maxFailures wrong passwords the login waits blockDuration. */
+    public record Login(
+            @Positive int maxFailures,
+            @NotNull Duration blockDuration) {
     }
 
     public record Jwt(

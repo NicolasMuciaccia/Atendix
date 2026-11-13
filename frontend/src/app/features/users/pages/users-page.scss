@@ -58,7 +58,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(220px, 2fr) 170px 180px 150px minmax(150px, auto);
+  grid-template-columns: minmax(200px, 2fr) 170px 170px 140px minmax(250px, auto);
   align-items: center;
   gap: var(--space-4);
   min-height: 60px;

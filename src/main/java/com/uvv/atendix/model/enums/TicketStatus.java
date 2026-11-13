@@ -12,9 +12,10 @@ public enum TicketStatus {
         return allowedTargets().contains(target);
     }
 
+    // Handling always starts before it finishes: a ticket cannot jump from open to finished
     private Set<TicketStatus> allowedTargets() {
         return switch (this) {
-            case OPEN -> Set.of(IN_PROGRESS, FINISHED);
+            case OPEN -> Set.of(IN_PROGRESS);
             case IN_PROGRESS -> Set.of(FINISHED);
             case FINISHED -> Set.of();
         };

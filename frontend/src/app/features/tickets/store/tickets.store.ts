@@ -39,27 +39,22 @@ export class TicketsStore {
     return listed ?? (detached?.id === selectedId ? detached : null);
   });
 
+  /** Loads the current page; a selected ticket outside it (opened by link) is fetched on its own. */
   async load(): Promise<void> {
-    this._loading.set(true);
-    this._error.set(null);
-    try {
-      this._page.set(await firstValueFrom(this.ticketService.list(this._filter())));
-      await this.fetchSelectedIfMissing();
-    } catch (error) {
-      this._error.set(errorMessageOf(error));
-    } finally {
-      this._loading.set(false);
-    }
+    await this.loadPage(true);
   }
 
+  /** A search shows only its result: a selected ticket left out of it is not fetched separately. */
   async applyFilter(date: string | null, sectorId: string | null): Promise<void> {
     this._filter.set({ date: date || null, sectorId: sectorId || null, page: 0 });
-    await this.load();
+    this._detached.set(null);
+    await this.loadPage(false);
   }
 
   async clearFilter(): Promise<void> {
     this._filter.set(NO_FILTER);
-    await this.load();
+    this._detached.set(null);
+    await this.loadPage(false);
   }
 
   async goToPage(page: number): Promise<void> {
@@ -96,6 +91,21 @@ export class TicketsStore {
     });
     if (this._detached()?.id === updated.id) {
       this._detached.set(updated);
+    }
+  }
+
+  private async loadPage(fetchMissingSelection: boolean): Promise<void> {
+    this._loading.set(true);
+    this._error.set(null);
+    try {
+      this._page.set(await firstValueFrom(this.ticketService.list(this._filter())));
+      if (fetchMissingSelection) {
+        await this.fetchSelectedIfMissing();
+      }
+    } catch (error) {
+      this._error.set(errorMessageOf(error));
+    } finally {
+      this._loading.set(false);
     }
   }
 

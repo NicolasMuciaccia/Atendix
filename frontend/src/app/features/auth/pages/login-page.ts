@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, inject, signal } from '
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { errorMessageOf } from '../../../core/api/api';
-import { FIRST_ACCESS_PATH, HOME_PATH } from '../../../core/auth/auth.guards';
+import { FIRST_ACCESS_PATH, HOME_PATH } from '../../../core/auth/auth.paths';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { focusFirstInvalid } from '../../../shared/format/focus-first-invalid';
 import { Button } from '../../../shared/ui/button';

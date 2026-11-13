@@ -43,6 +43,19 @@ public record TicketResponse(
         @Schema(description = "Nome de quem abriu o chamado.", example = "Usuário Comum")
         String requesterName,
 
+        @Schema(description = "Administrador que iniciou o atendimento; nulo enquanto aberto.", example = "Administrador")
+        String startedByName,
+
+        @Schema(description = "Momento em que o atendimento começou, em UTC; nulo enquanto aberto.",
+                example = "2026-11-07T15:00:00Z")
+        Instant startedAt,
+
+        @Schema(description = "Administrador que finalizou o chamado; nulo até a finalização.", example = "Administrador")
+        String finishedByName,
+
+        @Schema(description = "Momento da finalização, em UTC; nulo até a finalização.", example = "2026-11-07T16:20:00Z")
+        Instant finishedAt,
+
         @Schema(description = "Momento da abertura, em UTC.", example = "2026-11-07T14:30:00Z")
         Instant createdAt,
 

@@ -7,6 +7,7 @@ import com.uvv.atendix.model.entity.User;
 import com.uvv.atendix.model.request.ChangePasswordRequest;
 import com.uvv.atendix.model.request.LoginRequest;
 import com.uvv.atendix.repository.UserRepository;
+import com.uvv.atendix.security.LoginAttemptLimiter;
 import com.uvv.atendix.security.TokenService;
 import com.uvv.atendix.util.exception.AuthenticationFailedException;
 import com.uvv.atendix.util.exception.BusinessException;
@@ -31,28 +32,36 @@ public class AuthService {
     private static final String WRONG_CURRENT_PASSWORD = "A senha atual está incorreta";
     private static final String NEW_PASSWORD_IS_INITIAL = "A nova senha não pode ser igual à senha inicial";
     private static final String NEW_PASSWORD_IS_CURRENT = "A nova senha deve ser diferente da senha atual";
+    private static final String USER_DEACTIVATED = "Esta conta está desativada. Procure o administrador.";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final UserMapper userMapper;
+    private final LoginAttemptLimiter loginAttemptLimiter;
     private final String initialPassword;
     // Compared against when the login does not exist, so both failures take the same time
     private final String unknownUserPasswordHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenService tokenService,
-                       UserMapper userMapper, AppProperties appProperties) {
+                       UserMapper userMapper, LoginAttemptLimiter loginAttemptLimiter, AppProperties appProperties) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
         this.userMapper = userMapper;
+        this.loginAttemptLimiter = loginAttemptLimiter;
         this.initialPassword = appProperties.users().initialPassword();
         this.unknownUserPasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     @Transactional(readOnly = true)
     public AuthSession login(LoginRequest request) {
-        User user = authenticate(request);
+        String login = User.normalizeLogin(request.login());
+        loginAttemptLimiter.ensureNotBlocked(login);
+
+        User user = authenticate(login, request.password());
+        validateActive(user);
+        loginAttemptLimiter.reset(login);
 
         log.info("User {} logged in", user.getId());
         return openSession(user);
@@ -62,6 +71,7 @@ public class AuthService {
     public AuthSession refresh(String refreshToken) {
         UUID userId = tokenService.consumeRefreshToken(refreshToken);
         User user = userRepository.findById(userId)
+                .filter(User::isActive)
                 .orElseThrow(() -> new AuthenticationFailedException(INVALID_SESSION));
 
         return openSession(user);
@@ -82,21 +92,29 @@ public class AuthService {
         user.changePassword(passwordEncoder.encode(request.newPassword()));
         User savedUser = userRepository.save(user);
 
-        revokeSession(currentUser, refreshToken);
+        revokeSessions(currentUser, refreshToken);
 
         log.info("User {} changed the password", savedUser.getId());
         return openSession(savedUser);
     }
 
-    private User authenticate(LoginRequest request) {
-        Optional<User> user = userRepository.findByLogin(User.normalizeLogin(request.login()));
+    private User authenticate(String login, String password) {
+        Optional<User> user = userRepository.findByLogin(login);
         String passwordHash = user.map(User::getPasswordHash).orElse(unknownUserPasswordHash);
-        boolean passwordMatches = passwordEncoder.matches(request.password(), passwordHash);
+        boolean passwordMatches = passwordEncoder.matches(password, passwordHash);
 
         if (user.isEmpty() || !passwordMatches) {
+            loginAttemptLimiter.recordFailure(login);
             throw new AuthenticationFailedException(INVALID_CREDENTIALS);
         }
         return user.get();
+    }
+
+    // Checked only after the password matches, so it does not reveal which logins exist
+    private void validateActive(User user) {
+        if (!user.isActive()) {
+            throw new AuthenticationFailedException(USER_DEACTIVATED);
+        }
     }
 
     private void validateCurrentPassword(String currentPassword, User user) {
@@ -114,7 +132,10 @@ public class AuthService {
         }
     }
 
-    private void revokeSession(AuthenticatedUser currentUser, String refreshToken) {
+    // Sessions on other devices end too. The current pair is also revoked by id: the per-user cutoff
+    // spares a token issued in the very same millisecond
+    private void revokeSessions(AuthenticatedUser currentUser, String refreshToken) {
+        tokenService.revokeAllSessionsOf(currentUser.id());
         tokenService.revoke(currentUser.accessTokenId(), currentUser.accessTokenExpiresAt());
         tokenService.revokeRefreshTokenIfActive(refreshToken);
     }

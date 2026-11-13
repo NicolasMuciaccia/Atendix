@@ -10,9 +10,11 @@ import com.uvv.atendix.model.entity.UserFixtures;
 import com.uvv.atendix.model.request.ChangePasswordRequest;
 import com.uvv.atendix.model.request.LoginRequest;
 import com.uvv.atendix.repository.UserRepository;
+import com.uvv.atendix.security.LoginAttemptLimiter;
 import com.uvv.atendix.security.TokenService;
 import com.uvv.atendix.util.exception.AuthenticationFailedException;
 import com.uvv.atendix.util.exception.BusinessException;
+import com.uvv.atendix.util.exception.TooManyAttemptsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +55,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         authService = new AuthService(userRepository, passwordEncoder, tokenService, new UserMapper(),
-                TestProperties.appProperties());
+                new LoginAttemptLimiter(TestProperties.appProperties()), TestProperties.appProperties());
         user = UserFixtures.withPasswordHash(passwordEncoder.encode(TestProperties.INITIAL_PASSWORD));
     }
 
@@ -77,6 +79,28 @@ class AuthServiceTest {
     }
 
     @Test
+    void shouldBlockLoginAfterTooManyWrongPasswords() {
+        givenUserIsRegistered();
+        for (int attempt = 0; attempt < TestProperties.MAX_LOGIN_FAILURES; attempt++) {
+            assertThatThrownBy(() -> authService.login(new LoginRequest("usuario", "senha-errada")))
+                    .isInstanceOf(AuthenticationFailedException.class);
+        }
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("usuario", TestProperties.INITIAL_PASSWORD)))
+                .isInstanceOf(TooManyAttemptsException.class);
+    }
+
+    @Test
+    void shouldRejectDeactivatedAccountEvenWithTheRightPassword() {
+        user.deactivate();
+        givenUserIsRegistered();
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("usuario", TestProperties.INITIAL_PASSWORD)))
+                .isInstanceOf(AuthenticationFailedException.class)
+                .hasMessageContaining("desativada");
+    }
+
+    @Test
     void shouldRejectUnknownLogin() {
         when(userRepository.findByLogin("ninguem")).thenReturn(Optional.empty());
 
@@ -95,6 +119,7 @@ class AuthServiceTest {
 
         assertThat(session.user().mustChangePassword()).isFalse();
         assertThat(passwordEncoder.matches(NEW_PASSWORD, user.getPasswordHash())).isTrue();
+        verify(tokenService).revokeAllSessionsOf(user.getId());
         verify(tokenService).revoke(ACCESS_TOKEN_ID, ACCESS_TOKEN_EXPIRES_AT);
         verify(tokenService).revokeRefreshTokenIfActive(REFRESH_TOKEN);
     }

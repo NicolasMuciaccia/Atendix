@@ -29,6 +29,10 @@ export class UserService {
     return this.http.patch<User>(`${USERS_URL}/${userId}/role`, { role });
   }
 
+  changeActive(userId: string, active: boolean): Observable<User> {
+    return this.http.patch<User>(`${USERS_URL}/${userId}/active`, { active });
+  }
+
   resetPassword(userId: string): Observable<void> {
     return this.http.post<void>(`${USERS_URL}/${userId}/password-reset`, null);
   }
