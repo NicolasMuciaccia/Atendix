@@ -16,16 +16,54 @@ Atendix é um help desk web para abrir e acompanhar chamados de reparo de equipa
 
 ## Como rodar
 
-### Pré-requisitos
+### Com Docker (recomendado)
+
+Só é preciso o [Docker](https://www.docker.com/products/docker-desktop/) com Docker Compose em execução. Não precisa de Java, Maven, Node nem de arquivo `.env`: o banco, a API e a interface são construídos e sobem juntos.
+
+Na raiz do projeto:
+
+```bash
+docker compose up --build -d
+```
+
+A primeira execução baixa as imagens e compila tudo, o que leva alguns minutos. Quando terminar, abra `http://localhost:8080` e entre com um dos [usuários para login](#usuários-para-login).
+
+As tabelas e os usuários padrão são criados automaticamente. Setores, etiquetas e itens começam vazios e são cadastrados pelo administrador em **Cadastros**. Os dados ficam no volume `atendix-db` e sobrevivem a reinícios.
+
+| Ação | Comando |
+|---|---|
+| Ver se tudo subiu (os três serviços ficam `healthy`) | `docker compose ps` |
+| Acompanhar os logs da API | `docker compose logs -f api` |
+| Parar mantendo os dados | `docker compose down` |
+| Parar e apagar os dados | `docker compose down -v` |
+
+Se a porta `8080` já estiver em uso, escolha outra na hora de subir (no PowerShell: `$env:ATENDIX_PORT=8090; docker compose up --build -d`):
+
+```bash
+ATENDIX_PORT=8090 docker compose up --build -d
+```
+
+Variáveis opcionais, lidas do ambiente ou de um `.env` na raiz:
+
+| Variável | Para que serve | Padrão |
+|---|---|---|
+| `ATENDIX_PORT` | Porta do navegador | `8080` |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Banco criado no container | `atendix` / `atendix` / `atendix-local` |
+| `JWT_SECRET` | Segredo dos tokens, com no mínimo 32 caracteres. Vazio, a API gera um aleatório a cada início, e reiniciar a API encerra as sessões abertas | gerado |
+| `COOKIE_SECURE` | Cookies só por HTTPS. Fica `false` porque o acesso local é por HTTP | `false` |
+
+### Sem Docker (desenvolvimento)
+
+#### Pré-requisitos
 
 | Ferramenta | Versão |
 |---|---|
 | JDK | 25 |
-| Maven | 3.9 ou superior |
+| Maven | não precisa instalar: o projeto traz o Maven Wrapper (`./mvnw` ou `mvnw.cmd`) |
 | Node.js | 22.22+ ou 24.15+ (com npm) |
-| Docker | com Docker Compose |
+| Docker | só para o banco e para os testes de integração |
 
-### 1. Variáveis de ambiente
+#### 1. Variáveis de ambiente
 
 Copie o modelo e preencha a senha do banco e o segredo de assinatura dos tokens:
 
@@ -45,25 +83,25 @@ cp .env.example .env
 
 O `.env` não vai para o repositório. O banco e a API leem o mesmo arquivo.
 
-### 2. Banco de dados
+#### 2. Banco de dados
 
 ```bash
-docker compose up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-Sobe o PostgreSQL na porta `5433` do host. As tabelas e os [usuários padrão](#usuários-para-login) são criados automaticamente quando a API sobe. Setores, etiquetas e itens começam vazios e são cadastrados pelo administrador em **Cadastros**.
+Sobe só o PostgreSQL, na porta `DB_PORT` do host (`5433` no exemplo).
 
-### 3. API
+#### 3. API
 
-Na raiz do projeto:
+Na raiz do projeto (no Windows, `mvnw.cmd` no lugar de `./mvnw`):
 
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 A API fica em `http://localhost:8080`.
 
-### 4. Interface web
+#### 4. Interface web
 
 Em outro terminal:
 
@@ -86,7 +124,7 @@ Abra `http://localhost:4200`. A interface encaminha as chamadas `/api` para a AP
 API (unitários e de integração; os de integração sobem um PostgreSQL temporário e precisam do Docker em execução):
 
 ```bash
-mvn verify
+./mvnw verify
 ```
 
 Interface web:
@@ -186,7 +224,7 @@ Os dois primeiros são `HttpOnly`, `Secure` e `SameSite=Strict`: scripts da pág
 
 | Ambiente | URL |
 |---|---|
-| Local | http://localhost:8080/swagger-ui.html |
+| Local (Docker ou `./mvnw spring-boot:run`) | http://localhost:8080/swagger-ui.html |
 | Quality | — |
 | Produção | — |
 

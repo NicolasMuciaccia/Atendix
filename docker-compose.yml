@@ -1,15 +1,51 @@
+name: atendix
+
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: atendix-postgres
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT}:5432"
+      POSTGRES_DB: ${DB_NAME:-atendix}
+      POSTGRES_USER: ${DB_USER:-atendix}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-atendix-local}
     volumes:
-      - atendix-data:/var/lib/postgresql/data
+      - atendix-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build: .
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-atendix}
+      DB_USER: ${DB_USER:-atendix}
+      DB_PASSWORD: ${DB_PASSWORD:-atendix-local}
+      JWT_SECRET: ${JWT_SECRET:-}
+      # Served over plain HTTP on the local machine; set to true behind HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/v1/auth/csrf"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports:
+      - "${ATENDIX_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  atendix-data:
+  atendix-db:

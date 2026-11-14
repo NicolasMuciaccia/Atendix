@@ -1,0 +1,20 @@
+# Only the database, published on the host, for running the API and the front-end from the IDE.
+# Usage: docker compose -f docker-compose.dev.yml up -d
+name: atendix-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-atendix}
+      POSTGRES_USER: ${DB_USER:-atendix}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-atendix-local}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - atendix-data:/var/lib/postgresql/data
+
+volumes:
+  atendix-data:
+    # Name kept from the earlier compose file so existing development data is reused.
+    name: helpdesk_atendix-data
