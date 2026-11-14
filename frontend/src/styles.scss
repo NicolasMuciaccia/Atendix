@@ -1,4 +1,4 @@
-// Tokens copied from the Atendix design system (design-system/tokens). Keep them in sync with it.
+// Tokens based on the Atendix design system (design-system/tokens), with the Garden type scale and a dark theme.
 @use 'styles/tokens/fonts';
 @use 'styles/tokens/colors';
 @use 'styles/tokens/typography';
@@ -40,7 +40,7 @@ button {
 .atx-skeleton {
   display: block;
   border-radius: var(--radius-xs);
-  background: var(--ink-100);
+  background: var(--skeleton);
   animation: atx-pulse 1.4s var(--ease-standard) infinite;
 }
 

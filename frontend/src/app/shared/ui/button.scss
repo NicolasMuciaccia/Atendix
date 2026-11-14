@@ -2,7 +2,7 @@
   --btn-bg: var(--action-primary);
   --btn-hover: var(--action-primary-hover);
   --btn-press: var(--action-primary-press);
-  --btn-fg: var(--white);
+  --btn-fg: var(--text-on-primary);
   --btn-border: transparent;
   --btn-shadow: var(--shadow-xs);
 
@@ -49,6 +49,15 @@
     opacity: 0.8;
     cursor: progress;
   }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-strong);
+  }
+
+  @media (pointer: coarse) {
+    min-height: var(--touch-min);
+  }
 }
 
 :host(.atx-button--sm) {
@@ -77,25 +86,25 @@
 }
 
 :host(.atx-button--secondary) {
-  --btn-bg: var(--white);
+  --btn-bg: var(--surface-card);
   --btn-hover: var(--surface-hover);
-  --btn-press: var(--ink-100);
-  --btn-fg: var(--ink-800);
+  --btn-press: var(--surface-press);
+  --btn-fg: var(--text-strong);
   --btn-border: var(--border-default);
 }
 
 :host(.atx-button--ghost) {
   --btn-bg: transparent;
   --btn-hover: var(--surface-hover);
-  --btn-press: var(--ink-100);
-  --btn-fg: var(--ink-700);
+  --btn-press: var(--surface-press);
+  --btn-fg: var(--text-body);
   --btn-shadow: none;
 }
 
 :host(.atx-button--danger) {
   --btn-bg: var(--danger-bg);
-  --btn-hover: var(--red-100);
-  --btn-press: var(--red-100);
+  --btn-hover: var(--action-danger-soft);
+  --btn-press: var(--action-danger-soft);
   --btn-fg: var(--danger-text);
   --btn-shadow: none;
 }

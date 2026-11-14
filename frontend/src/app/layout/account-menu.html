@@ -1,0 +1,65 @@
+@if (user(); as currentUser) {
+  @if (placement() === 'sidebar') {
+    <button class="trigger" type="button" aria-haspopup="menu" [attr.aria-expanded]="open()" (click)="toggle()">
+      <atx-avatar [name]="currentUser.name" [size]="34" />
+      <span class="trigger-text">
+        <span class="trigger-name">{{ currentUser.name }}</span>
+        <span class="trigger-role">{{ roleLabels[currentUser.role] }}</span>
+      </span>
+      <atx-icon name="chevron-up" [size]="12" />
+    </button>
+  } @else {
+    <button class="trigger-compact" type="button" aria-haspopup="menu" [attr.aria-expanded]="open()" (click)="toggle()">
+      <atx-avatar [name]="currentUser.name" [size]="26" />
+      Conta
+    </button>
+  }
+
+  @if (open()) {
+    <div class="menu" role="menu" aria-label="Conta">
+      <div class="current">
+        <atx-avatar [name]="currentUser.name" [size]="40" />
+        <div class="current-text">
+          <span class="current-name">{{ currentUser.name }}</span>
+          <span class="current-meta">{{ currentUser.login }} · {{ roleLabels[currentUser.role] }}</span>
+        </div>
+      </div>
+
+      @if (otherAccounts().length) {
+        <p class="group-label">Outras contas neste navegador</p>
+        @for (account of otherAccounts(); track account.slot) {
+          <button class="menu-item" type="button" role="menuitem" (click)="switchTo(account.slot)">
+            <atx-avatar [name]="account.name" [size]="28" />
+            <span class="account-text">
+              <span class="account-name">{{ account.name }}</span>
+              <span class="account-login">{{ account.login }}</span>
+            </span>
+          </button>
+        }
+      }
+
+      <div class="separator" role="separator"></div>
+
+      <button class="menu-item" type="button" role="menuitem" [disabled]="!canAddAccount()" (click)="addAccount()">
+        <atx-icon name="user-plus" [size]="16" />
+        <span class="item-text">
+          Entrar com outra conta
+          <span class="item-hint">
+            {{ canAddAccount() ? 'Abre em uma nova aba' : 'Limite de ' + maxAccounts + ' contas ao mesmo tempo' }}
+          </span>
+        </span>
+      </button>
+      <button class="menu-item" type="button" role="menuitem" (click)="toggleTheme()">
+        <atx-icon [name]="isDark() ? 'sun' : 'moon'" [size]="16" />
+        <span class="item-text">{{ isDark() ? 'Usar tema claro' : 'Usar tema escuro' }}</span>
+      </button>
+
+      <div class="separator" role="separator"></div>
+
+      <button class="menu-item danger" type="button" role="menuitem" (click)="logout()">
+        <atx-icon name="sign-out" [size]="16" />
+        <span class="item-text">Sair desta conta</span>
+      </button>
+    </div>
+  }
+}

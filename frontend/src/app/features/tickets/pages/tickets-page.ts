@@ -11,21 +11,33 @@ import { ToastService } from '../../../shared/ui/toast';
 import { TicketAction, TicketDetail } from '../components/ticket-detail';
 import { TicketFormDialog } from '../components/ticket-form-dialog';
 import { TicketRow } from '../components/ticket-row';
-import { ItemsStore, SectorsStore } from '../../catalog/store/catalog-list.store';
-import { CreateTicketRequest, TicketStatus, isCancelable } from '../data/ticket.models';
+import { AssetTagsStore, ItemsStore, SectorsStore } from '../../catalog/store/catalog-list.store';
+import { CreateTicketRequest, TICKET_STATUSES, TicketSearch, TicketStatus, hasSearch, isCancelable } from '../data/ticket.models';
+import { TicketStatusTabs } from '../components/ticket-status-tabs';
 import { TicketsStore } from '../store/tickets.store';
 
 const SKELETON_ROWS = [0, 1, 2, 3, 4, 5];
 const NEW_TICKET_FLAG = '1';
 
+/** Readable values of the status query param, e.g. /chamados?status=em-andamento. */
+const STATUS_SLUGS: Record<TicketStatus, string> = {
+  OPEN: 'aberto',
+  IN_PROGRESS: 'em-andamento',
+  FINISHED: 'finalizado',
+};
+
+function statusFromSlug(slug: string | undefined): TicketStatus | null {
+  return TICKET_STATUSES.find(status => STATUS_SLUGS[status] === slug) ?? null;
+}
+
 @Component({
   selector: 'atx-tickets-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [TicketsStore, ItemsStore, SectorsStore],
+  providers: [TicketsStore, ItemsStore, SectorsStore, AssetTagsStore],
   host: { '[class.has-selection]': '!!chamado()' },
   imports: [
     ReactiveFormsModule, RouterLink, Button, Dialog, IconButton, EmptyState, ErrorState,
-    TicketDetail, TicketFormDialog, TicketRow,
+    TicketDetail, TicketFormDialog, TicketRow, TicketStatusTabs,
   ],
   templateUrl: './tickets-page.html',
   styleUrl: './tickets-page.scss',
@@ -35,17 +47,36 @@ export class TicketsPage {
   readonly chamado = input<string | undefined>();
   /** Query param set by the "new ticket" buttons, including the mobile bottom navigation. */
   readonly novo = input<string | undefined>();
+  /** Search filters, kept in the URL so they survive a reload and can be shared by link. */
+  readonly data = input<string | undefined>();
+  readonly setor = input<string | undefined>();
+  readonly etiqueta = input<string | undefined>();
+  readonly status = input<string | undefined>();
 
   protected readonly store = inject(TicketsStore);
   protected readonly items = inject(ItemsStore);
   protected readonly sectors = inject(SectorsStore);
+  protected readonly assetTags = inject(AssetTagsStore);
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
   protected readonly isAdmin = this.authStore.isAdmin;
   protected readonly skeletonRows = SKELETON_ROWS;
-  protected readonly filterForm = inject(FormBuilder).nonNullable.group({ date: '', sectorId: '' });
+  protected readonly filterForm = inject(FormBuilder).nonNullable.group({ date: '', sectorId: '', assetTagId: '' });
+  protected readonly filtersOpen = signal(false);
+
+  /** Date and sector are reserved to administrators, so a shared link cannot make a common user's search fail. */
+  protected readonly search = computed<TicketSearch>(() => ({
+    date: this.isAdmin() ? this.data() || null : null,
+    sectorId: this.isAdmin() ? this.setor() || null : null,
+    assetTagId: this.etiqueta() || null,
+    status: statusFromSlug(this.status()),
+  }));
+  protected readonly activeFilterCount = computed(() => {
+    const { date, sectorId, assetTagId } = this.search();
+    return [date, sectorId, assetTagId].filter(value => value !== null).length;
+  });
 
   protected readonly creating = signal(false);
   protected readonly createError = signal<string | null>(null);
@@ -62,10 +93,15 @@ export class TicketsPage {
   protected readonly pageLabel = computed(() => `Página ${this.store.currentPage() + 1} de ${this.store.totalPages()}`);
 
   constructor() {
-    void this.store.load();
+    void this.assetTags.load();
     if (this.isAdmin()) {
       void this.sectors.load();
     }
+
+    effect(() => {
+      const search = this.search();
+      untracked(() => void this.runSearch(search));
+    });
 
     // The selection lives in the URL; the store fetches a ticket that is not on the current page
     effect(() => {
@@ -107,16 +143,35 @@ export class TicketsPage {
     }
   }
 
-  protected async applyFilter(): Promise<void> {
-    const { date, sectorId } = this.filterForm.getRawValue();
-    await this.store.applyFilter(date, sectorId);
-    this.closeSelectionOutsideResult();
+  protected applyFilter(): void {
+    const { date, sectorId, assetTagId } = this.filterForm.getRawValue();
+    this.filtersOpen.set(false);
+    this.navigateWith({ data: date || null, setor: sectorId || null, etiqueta: assetTagId || null });
   }
 
-  protected async clearFilter(): Promise<void> {
-    this.filterForm.reset();
-    await this.store.clearFilter();
-    this.closeSelectionOutsideResult();
+  protected clearFilter(): void {
+    this.filtersOpen.set(false);
+    this.navigateWith({ data: null, setor: null, etiqueta: null, status: null });
+  }
+
+  protected filterByStatus(status: TicketStatus | null): void {
+    this.navigateWith({ status: status ? STATUS_SLUGS[status] : null });
+  }
+
+  private navigateWith(queryParams: Record<string, string | null>): void {
+    void this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
+  }
+
+  private async runSearch(search: TicketSearch): Promise<void> {
+    this.filterForm.setValue({
+      date: search.date ?? '',
+      sectorId: search.sectorId ?? '',
+      assetTagId: search.assetTagId ?? '',
+    });
+    await this.store.search(search);
+    if (hasSearch(search)) {
+      this.closeSelectionOutsideResult();
+    }
   }
 
   // The detail must match the list: a ticket the new search left out is no longer shown

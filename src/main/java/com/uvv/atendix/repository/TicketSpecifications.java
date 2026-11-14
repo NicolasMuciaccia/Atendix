@@ -2,6 +2,7 @@ package com.uvv.atendix.repository;
 
 import com.uvv.atendix.model.dto.TicketFilter;
 import com.uvv.atendix.model.entity.Ticket;
+import com.uvv.atendix.model.enums.TicketStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -25,6 +26,12 @@ public final class TicketSpecifications {
         if (filter.sectorId() != null) {
             conditions.add(inSector(filter.sectorId()));
         }
+        if (filter.assetTagId() != null) {
+            conditions.add(forAssetTag(filter.assetTagId()));
+        }
+        if (filter.status() != null) {
+            conditions.add(inStatus(filter.status()));
+        }
         return Specification.allOf(conditions);
     }
 
@@ -38,5 +45,13 @@ public final class TicketSpecifications {
 
     private static Specification<Ticket> inSector(UUID sectorId) {
         return (root, query, cb) -> cb.equal(root.get("item").get("sector").get("id"), sectorId);
+    }
+
+    private static Specification<Ticket> forAssetTag(UUID assetTagId) {
+        return (root, query, cb) -> cb.equal(root.get("item").get("assetTag").get("id"), assetTagId);
+    }
+
+    private static Specification<Ticket> inStatus(TicketStatus status) {
+        return (root, query, cb) -> cb.equal(root.get("status"), status);
     }
 }

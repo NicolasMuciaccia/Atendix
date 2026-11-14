@@ -53,8 +53,17 @@ public class User extends BaseEntity {
         return user;
     }
 
+    /** Login as typed, without surrounding spaces: sign-in compares it case-sensitively. */
     public static String normalizeLogin(String login) {
-        return login.trim().toLowerCase(Locale.ROOT);
+        return login.trim();
+    }
+
+    /**
+     * Case-insensitive identity of a login. Keeps "Admin" from being registered next to "admin"
+     * and keeps case variations from dodging the failed-attempt lockout.
+     */
+    public static String loginKey(String login) {
+        return normalizeLogin(login).toLowerCase(Locale.ROOT);
     }
 
     public void changePassword(String newPasswordHash) {

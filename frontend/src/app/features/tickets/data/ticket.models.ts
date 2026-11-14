@@ -28,10 +28,44 @@ export interface CreateTicketRequest {
   problemDescription: string;
 }
 
-export interface TicketFilter {
+/** Status and tag are open to every profile; date and sector only to administrators. */
+export interface TicketSearch {
   date: string | null;
   sectorId: string | null;
+  assetTagId: string | null;
+  status: TicketStatus | null;
+}
+
+export interface TicketFilter extends TicketSearch {
   page: number;
+}
+
+export const NO_SEARCH: TicketSearch = { date: null, sectorId: null, assetTagId: null, status: null };
+
+export function hasSearch(search: TicketSearch): boolean {
+  return search.date !== null || search.sectorId !== null || search.assetTagId !== null || search.status !== null;
+}
+
+export interface TicketStatusCounts {
+  open: number;
+  inProgress: number;
+  finished: number;
+  total: number;
+}
+
+export const TICKET_STATUSES: TicketStatus[] = ['OPEN', 'IN_PROGRESS', 'FINISHED'];
+
+export function isTicketStatus(value: string | null | undefined): value is TicketStatus {
+  return TICKET_STATUSES.includes(value as TicketStatus);
+}
+
+export function countOf(counts: TicketStatusCounts, status: TicketStatus): number {
+  const byStatus: Record<TicketStatus, number> = {
+    OPEN: counts.open,
+    IN_PROGRESS: counts.inProgress,
+    FINISHED: counts.finished,
+  };
+  return byStatus[status];
 }
 
 export const STATUS_LABELS: Record<TicketStatus, string> = {

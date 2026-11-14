@@ -39,9 +39,9 @@ export class ToastService {
   template: `
     @for (toast of toastService.toasts(); track toast.id) {
       <div class="toast" [class.toast--danger]="toast.tone === 'danger'">
-        <atx-icon [name]="toast.tone === 'danger' ? 'circle-alert' : 'circle-check'" [size]="16" />
+        <atx-icon [name]="toast.tone === 'danger' ? 'exclamation-circle' : 'check-circle'" [size]="16" />
         <span class="message">{{ toast.message }}</span>
-        <button atxIconButton variant="inverse" size="sm" icon="x" label="Dispensar" type="button"
+        <button atxIconButton variant="inverse" size="sm" icon="times" label="Dispensar" type="button"
                 (click)="toastService.dismiss(toast.id)"></button>
       </div>
     }
@@ -52,8 +52,8 @@ export class ToastService {
     .toast { display: flex; align-items: center; gap: var(--space-2-5); min-height: 44px; padding: 0 var(--space-2) 0 var(--space-3);
              border-radius: var(--radius-lg); background: var(--surface-inverse); color: var(--text-inverse);
              box-shadow: var(--shadow-lg); font-size: var(--text-base); animation: enter var(--duration-slow) var(--ease-out); }
-    .toast atx-icon { color: var(--green-500); }
-    .toast--danger atx-icon:first-child { color: var(--red-500); }
+    .toast atx-icon { color: var(--positive); }
+    .toast--danger atx-icon:first-child { color: var(--danger); }
     .message { flex: 1; }
     @keyframes enter { from { opacity: 0; transform: translateY(8px); } }
     @media (max-width: 959px) { :host { right: var(--space-4); left: var(--space-4); bottom: calc(var(--bottom-nav-height) + var(--space-3)); } }

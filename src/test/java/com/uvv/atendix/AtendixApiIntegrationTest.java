@@ -2,6 +2,7 @@ package com.uvv.atendix;
 
 import com.jayway.jsonpath.JsonPath;
 import com.uvv.atendix.security.AuthCookies;
+import com.uvv.atendix.security.SessionSlot;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,7 @@ class AtendixApiIntegrationTest {
     private static final int MAX_LOGIN_FAILURES = 5;
     private static final String XSRF_COOKIE = "XSRF-TOKEN";
     private static final String XSRF_HEADER = "X-XSRF-TOKEN";
+    private static final String SECOND_SLOT_ACCESS_COOKIE = AuthCookies.ACCESS_TOKEN + "_1";
 
     private static final String CSRF = "/api/v1/auth/csrf";
     private static final String LOGIN = "/api/v1/auth/login";
@@ -303,6 +305,77 @@ class AtendixApiIntegrationTest {
     }
 
     @Test
+    void shouldKeepTwoAccountsSignedInSideBySideInTheSameBrowser() throws Exception {
+        String commonLogin = createUser("COMMON");
+        MvcResult secondTab = mockMvc.perform(post(LOGIN).with(xsrf()).header(SessionSlot.HEADER, "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody(commonLogin, INITIAL_PASSWORD)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().exists(SECOND_SLOT_ACCESS_COOKIE))
+                .andExpect(cookie().doesNotExist(AuthCookies.ACCESS_TOKEN))
+                .andReturn();
+        Cookie[] browserCookies = browserWith(adminSession, secondTab.getResponse());
+
+        mockMvc.perform(get(CURRENT_USER).cookie(browserCookies))
+                .andExpect(jsonPath("$.login").value(ADMIN_LOGIN));
+        mockMvc.perform(get(CURRENT_USER).header(SessionSlot.HEADER, "1").cookie(browserCookies))
+                .andExpect(jsonPath("$.login").value(commonLogin));
+
+        mockMvc.perform(post(LOGOUT).with(xsrf()).header(SessionSlot.HEADER, "1").cookie(browserCookies))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().maxAge(SECOND_SLOT_ACCESS_COOKIE, 0))
+                .andExpect(cookie().doesNotExist(AuthCookies.ACCESS_TOKEN));
+        mockMvc.perform(get(CURRENT_USER).cookie(browserCookies))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRejectSessionSlotOutOfRange() throws Exception {
+        mockMvc.perform(get(CURRENT_USER).header(SessionSlot.HEADER, "9").cookie(adminSession.cookies()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldMatchTheLoginExactlyAsRegistered() throws Exception {
+        String login = createUser("COMMON");
+
+        mockMvc.perform(post(LOGIN).with(xsrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody(login.toUpperCase(), INITIAL_PASSWORD)))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post(USERS).with(xsrf()).cookie(adminSession.cookies())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(userBody(login.toUpperCase(), "COMMON")))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldFilterAndCountTicketsByStatusAndTag() throws Exception {
+        Session requester = commonUserSession();
+        CatalogEntry handled = registerItem();
+        String handledTicket = openTicket(requester, "2026-11-04", handled.itemId());
+        String openTicket = openTicket(requester, "2026-11-04", registerItem().itemId());
+        mockMvc.perform(patch(TICKETS + "/" + handledTicket + "/status").with(xsrf()).cookie(adminSession.cookies())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(statusBody("IN_PROGRESS")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get(TICKETS).param("status", "IN_PROGRESS").cookie(requester.cookies()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].id", hasItem(handledTicket)))
+                .andExpect(jsonPath("$.content[*].id", not(hasItem(openTicket))));
+        mockMvc.perform(get(TICKETS).param("assetTagId", handled.tagId()).cookie(requester.cookies()))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(handledTicket));
+        mockMvc.perform(get(TICKETS + "/status-counts").cookie(requester.cookies()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.open").value(1))
+                .andExpect(jsonPath("$.inProgress").value(1))
+                .andExpect(jsonPath("$.finished").value(0))
+                .andExpect(jsonPath("$.total").value(2));
+    }
+
+    @Test
     void shouldAcceptEachRefreshTokenOnlyOnce() throws Exception {
         Session session = commonUserSession();
 
@@ -540,6 +613,13 @@ class AtendixApiIntegrationTest {
             request.addHeader(XSRF_HEADER, xsrfCookie.getValue());
             return request;
         };
+    }
+
+    // What the browser holds after one tab signed in on the default slot and another on slot 1
+    private Cookie[] browserWith(Session defaultSlot, MockHttpServletResponse secondSlotLogin) {
+        return new Cookie[]{defaultSlot.accessToken(), defaultSlot.refreshToken(),
+                secondSlotLogin.getCookie(SECOND_SLOT_ACCESS_COOKIE),
+                secondSlotLogin.getCookie(AuthCookies.REFRESH_TOKEN + "_1")};
     }
 
     private Session sessionFrom(MockHttpServletResponse response) {

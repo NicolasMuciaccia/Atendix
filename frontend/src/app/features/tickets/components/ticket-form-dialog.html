@@ -4,14 +4,14 @@
   <form id="ticket-form" class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     @if (serverError()) {
       <p class="banner" role="alert">
-        <atx-icon name="circle-alert" [size]="15" />
+        <atx-icon name="exclamation-circle" [size]="15" />
         {{ serverError() }}
       </p>
     }
 
     @if (catalogEmpty()) {
       <p class="banner banner--info" role="status">
-        <atx-icon name="info" [size]="15" />
+        <atx-icon name="info-circle" [size]="15" />
         @if (isAdmin()) {
           <span>Nenhum item cadastrado ainda. Cadastre em <a routerLink="/cadastros/itens">Cadastros</a> antes de abrir chamados.</span>
         } @else {
@@ -59,7 +59,7 @@
 
     @if (selectedItem(); as item) {
       <p class="summary" aria-live="polite">
-        <atx-icon name="circle-check" [size]="15" />
+        <atx-icon name="check-circle" [size]="15" />
         <span><strong>{{ item.name }}</strong> · {{ item.sectorName }} · etiqueta {{ item.assetTagCode }}</span>
       </p>
     }

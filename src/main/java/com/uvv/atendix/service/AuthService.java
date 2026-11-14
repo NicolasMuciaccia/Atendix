@@ -56,12 +56,12 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthSession login(LoginRequest request) {
-        String login = User.normalizeLogin(request.login());
-        loginAttemptLimiter.ensureNotBlocked(login);
+        String attemptKey = User.loginKey(request.login());
+        loginAttemptLimiter.ensureNotBlocked(attemptKey);
 
-        User user = authenticate(login, request.password());
+        User user = authenticate(User.normalizeLogin(request.login()), request.password(), attemptKey);
         validateActive(user);
-        loginAttemptLimiter.reset(login);
+        loginAttemptLimiter.reset(attemptKey);
 
         log.info("User {} logged in", user.getId());
         return openSession(user);
@@ -98,13 +98,13 @@ public class AuthService {
         return openSession(savedUser);
     }
 
-    private User authenticate(String login, String password) {
+    private User authenticate(String login, String password, String attemptKey) {
         Optional<User> user = userRepository.findByLogin(login);
         String passwordHash = user.map(User::getPasswordHash).orElse(unknownUserPasswordHash);
         boolean passwordMatches = passwordEncoder.matches(password, passwordHash);
 
         if (user.isEmpty() || !passwordMatches) {
-            loginAttemptLimiter.recordFailure(login);
+            loginAttemptLimiter.recordFailure(attemptKey);
             throw new AuthenticationFailedException(INVALID_CREDENTIALS);
         }
         return user.get();

@@ -1,3 +1,5 @@
+<atx-theme-toggle class="theme-corner" />
+
 <div class="panel">
   <p class="wordmark">Atendix</p>
 
@@ -10,28 +12,32 @@
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       @if (error()) {
         <p class="banner" role="alert">
-          <atx-icon name="circle-alert" [size]="15" />
+          <atx-icon name="exclamation-circle" [size]="15" />
           {{ error() }}
         </p>
       }
 
       <atx-field label="Senha atual" for="current-password" hint="A senha inicial informada pelo administrador."
                  [error]="currentPasswordError()">
-        <input id="current-password" class="atx-control" type="password" formControlName="currentPassword"
-               autocomplete="current-password" aria-describedby="current-password-message"
-               [attr.aria-invalid]="!!currentPasswordError()" />
+        <atx-password-input>
+          <input id="current-password" class="atx-control" type="password" formControlName="currentPassword"
+                 autocomplete="current-password" aria-describedby="current-password-message"
+                 [attr.aria-invalid]="!!currentPasswordError()" />
+        </atx-password-input>
       </atx-field>
 
       <atx-field label="Nova senha" for="new-password" [error]="newPasswordError()">
-        <input id="new-password" class="atx-control" type="password" formControlName="newPassword"
-               autocomplete="new-password" aria-describedby="new-password-message password-rules"
-               [attr.aria-invalid]="!!newPasswordError()" />
+        <atx-password-input>
+          <input id="new-password" class="atx-control" type="password" formControlName="newPassword"
+                 autocomplete="new-password" aria-describedby="new-password-message password-rules"
+                 [attr.aria-invalid]="!!newPasswordError()" />
+        </atx-password-input>
       </atx-field>
 
       <ul class="rules" id="password-rules" aria-label="Requisitos da senha">
         @for (rule of rules(); track rule.label) {
           <li [class.met]="rule.met">
-            <atx-icon [name]="rule.met ? 'circle-check' : 'circle-dot'" [size]="14" [strokeWidth]="2" />
+            <atx-icon [name]="rule.met ? 'check-circle' : 'circle'" [size]="14" />
             {{ rule.label }}
             <span class="visually-hidden">{{ rule.met ? '(atendido)' : '(pendente)' }}</span>
           </li>
@@ -39,9 +45,11 @@
       </ul>
 
       <atx-field label="Confirmar nova senha" for="confirmation" [error]="confirmationError()">
-        <input id="confirmation" class="atx-control" type="password" formControlName="confirmation"
-               autocomplete="new-password" aria-describedby="confirmation-message"
-               [attr.aria-invalid]="!!confirmationError()" />
+        <atx-password-input>
+          <input id="confirmation" class="atx-control" type="password" formControlName="confirmation"
+                 autocomplete="new-password" aria-describedby="confirmation-message"
+                 [attr.aria-invalid]="!!confirmationError()" />
+        </atx-password-input>
       </atx-field>
 
       <button atxButton type="submit" size="lg" [fullWidth]="true" [loading]="submitting()">Salvar e continuar</button>

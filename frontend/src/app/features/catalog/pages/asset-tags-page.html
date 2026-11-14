@@ -40,9 +40,9 @@
           </span>
           <span class="cell muted" role="cell" data-label="Cadastro">{{ assetTag.createdAt | dateTime }}</span>
           <span class="actions" role="cell">
-            <button atxIconButton icon="pen-line" [label]="'Editar ' + assetTag.code" type="button"
+            <button atxIconButton icon="pencil" [label]="'Editar ' + assetTag.code" type="button"
                     (click)="openEdit(assetTag)"></button>
-            <button atxIconButton icon="trash-2" [label]="'Excluir ' + assetTag.code" type="button"
+            <button atxIconButton icon="trash" [label]="'Excluir ' + assetTag.code" type="button"
                     [disabled]="deletingId() === assetTag.id" (click)="deleteTarget.set(assetTag)"></button>
           </span>
         </div>
@@ -59,7 +59,7 @@
 <atx-dialog [open]="formOpen()" [title]="editing() ? 'Editar etiqueta' : 'Nova etiqueta'" (closed)="closeForm()">
   <form id="tag-form" class="form" [formGroup]="form" (ngSubmit)="save()" novalidate>
     @if (formError()) {
-      <p class="banner" role="alert"><atx-icon name="circle-alert" [size]="15" /> {{ formError() }}</p>
+      <p class="banner" role="alert"><atx-icon name="exclamation-circle" [size]="15" /> {{ formError() }}</p>
     }
     <atx-field label="Código da etiqueta" for="tag-code" hint="Gravado em letras maiúsculas."
                [error]="errorOf('code', 'Informe o código da etiqueta')">
@@ -79,6 +79,6 @@
             (closed)="deleteTarget.set(null)">
   <div dialogActions>
     <button atxButton variant="secondary" type="button" (click)="deleteTarget.set(null)">Manter</button>
-    <button atxButton variant="danger" iconLeft="trash-2" type="button" (click)="confirmDelete()">Excluir etiqueta</button>
+    <button atxButton variant="danger" iconLeft="trash" type="button" (click)="confirmDelete()">Excluir etiqueta</button>
   </div>
 </atx-dialog>

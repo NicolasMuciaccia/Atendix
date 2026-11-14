@@ -22,7 +22,7 @@ const LOGIN_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
                 (closed)="closed.emit()">
       <form id="user-form" class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         @if (serverError()) {
-          <p class="banner" role="alert"><atx-icon name="circle-alert" [size]="15" /> {{ serverError() }}</p>
+          <p class="banner" role="alert"><atx-icon name="exclamation-circle" [size]="15" /> {{ serverError() }}</p>
         }
         <atx-field label="Nome" for="user-name" [error]="errorOf('name')">
           <input id="user-name" class="atx-control" formControlName="name" [maxlength]="maxName" autocomplete="off"

@@ -31,14 +31,14 @@
           <span class="primary" role="cell">{{ sector.name }}</span>
           <span class="cell muted" role="cell" data-label="Cadastro">{{ sector.createdAt | dateTime }}</span>
           <span class="actions" role="cell">
-            <button atxIconButton icon="pen-line" [label]="'Editar ' + sector.name" type="button"
+            <button atxIconButton icon="pencil" [label]="'Editar ' + sector.name" type="button"
                     (click)="openEdit(sector)"></button>
-            <button atxIconButton icon="trash-2" [label]="'Excluir ' + sector.name" type="button"
+            <button atxIconButton icon="trash" [label]="'Excluir ' + sector.name" type="button"
                     [disabled]="deletingId() === sector.id" (click)="deleteTarget.set(sector)"></button>
           </span>
         </div>
       } @empty {
-        <atx-empty-state icon="building-2" title="Nenhum setor cadastrado"
+        <atx-empty-state icon="building" title="Nenhum setor cadastrado"
                          description="Setores agrupam os itens. Cadastre o primeiro para depois ligar itens a ele.">
           <button atxButton size="sm" iconLeft="plus" type="button" (click)="openCreate()">Novo setor</button>
         </atx-empty-state>
@@ -50,7 +50,7 @@
 <atx-dialog [open]="formOpen()" [title]="editing() ? 'Editar setor' : 'Novo setor'" (closed)="closeForm()">
   <form id="sector-form" class="form" [formGroup]="form" (ngSubmit)="save()" novalidate>
     @if (formError()) {
-      <p class="banner" role="alert"><atx-icon name="circle-alert" [size]="15" /> {{ formError() }}</p>
+      <p class="banner" role="alert"><atx-icon name="exclamation-circle" [size]="15" /> {{ formError() }}</p>
     }
     <atx-field label="Nome do setor" for="sector-name" [error]="errorOf('name', 'Informe o nome do setor')">
       <input id="sector-name" class="atx-control" formControlName="name" [maxlength]="maxName"
@@ -69,6 +69,6 @@
             (closed)="deleteTarget.set(null)">
   <div dialogActions>
     <button atxButton variant="secondary" type="button" (click)="deleteTarget.set(null)">Manter</button>
-    <button atxButton variant="danger" iconLeft="trash-2" type="button" (click)="confirmDelete()">Excluir setor</button>
+    <button atxButton variant="danger" iconLeft="trash" type="button" (click)="confirmDelete()">Excluir setor</button>
   </div>
 </atx-dialog>

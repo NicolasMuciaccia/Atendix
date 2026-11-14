@@ -18,7 +18,8 @@ public record CreateUserRequest(
         @NotBlank(message = "O login é obrigatório")
         @Pattern(regexp = "^[A-Za-z0-9._-]{3,40}$",
                 message = "O login deve ter de 3 a 40 caracteres, usando apenas letras, números, ponto, hífen ou sublinhado")
-        @Schema(description = "Login de acesso, gravado em minúsculas.", example = "maria.souza")
+        @Schema(description = "Login de acesso. Diferencia maiúsculas de minúsculas na entrada, mas não pode repetir "
+                + "um login existente escrito de outra forma.", example = "maria.souza")
         String login,
 
         @NotNull(message = "O perfil é obrigatório")

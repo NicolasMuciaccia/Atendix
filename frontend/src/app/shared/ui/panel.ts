@@ -33,7 +33,7 @@ export class PanelSection {
     :host { display: flex; align-items: center; gap: var(--space-2); min-height: 30px; font-size: var(--text-sm); }
     .label { width: 104px; flex-shrink: 0; color: var(--text-muted); }
     .value { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-1-5);
-             color: var(--ink-800); overflow-wrap: anywhere; }
+             color: var(--text-strong); overflow-wrap: anywhere; }
   `,
 })
 export class DetailRow {

@@ -8,7 +8,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--white);
+  background: var(--surface-input);
   color: var(--text-strong);
   font: var(--weight-regular) var(--text-md) / var(--leading-normal) var(--font-sans);
   transition:
@@ -40,7 +40,7 @@
     border-color: var(--danger);
 
     &:focus {
-      box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.18);
+      box-shadow: 0 0 0 3px var(--danger-ring);
     }
   }
 }
@@ -48,7 +48,16 @@
 .atx-control--sm {
   height: var(--control-md);
   padding: 0 var(--space-2-5);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
+}
+
+// Touch screens: taller targets, and 16px text so mobile browsers do not zoom in on focus
+@media (pointer: coarse) {
+  .atx-control,
+  .atx-control--sm {
+    height: var(--touch-min);
+    font-size: 16px;
+  }
 }
 
 textarea.atx-control {

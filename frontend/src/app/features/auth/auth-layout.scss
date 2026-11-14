@@ -14,8 +14,9 @@
 
 .wordmark {
   margin-bottom: var(--space-6);
-  font-size: var(--text-3xl);
-  font-weight: var(--weight-bold);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-2xl);
   letter-spacing: -0.02em;
   color: var(--text-strong);
 }
@@ -29,15 +30,14 @@
 }
 
 .title {
-  font-size: var(--text-xl);
-  font-weight: var(--weight-bold);
+  font: var(--type-page-title);
   letter-spacing: var(--tracking-heading);
   color: var(--text-strong);
 }
 
 .lead {
   margin-top: var(--space-1);
-  font-size: var(--text-base);
+  font: var(--type-body);
   color: var(--text-muted);
 }
 
@@ -56,31 +56,22 @@ form {
   border-radius: var(--radius-md);
   background: var(--danger-bg);
   color: var(--danger-text);
-  font-size: var(--text-sm);
+  font: var(--type-body);
 
   atx-icon {
-    margin-top: 1px;
+    margin-top: 2px;
   }
 }
 
 .banner--info {
-  background: var(--bg-subtle);
+  background: var(--info-bg);
   color: var(--info-text);
 }
 
-.password {
-  position: relative;
-
-  .atx-control {
-    padding-right: 44px;
-  }
-
-  button {
-    position: absolute;
-    top: 50%;
-    right: var(--space-1);
-    transform: translateY(-50%);
-  }
+.theme-corner {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
 }
 
 .footnote {

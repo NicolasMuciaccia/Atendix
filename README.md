@@ -1,6 +1,6 @@
 # Atendix
 
-Atendix é um help desk web para abrir e acompanhar chamados de reparo de equipamentos (computadores, impressoras, monitores). Quem usa abre um chamado escolhendo a etiqueta de patrimônio do equipamento e descrevendo o problema; o sistema já sabe qual é o item e em que setor ele fica. O administrador acompanha todos os chamados, filtra por data ou setor, conduz a tratativa até a finalização e mantém os cadastros de setores, etiquetas, itens e usuários. Todas as operações são síncronas: cada ação responde na hora com o resultado.
+Atendix é um help desk web para abrir e acompanhar chamados de reparo de equipamentos (computadores, impressoras, monitores). Quem usa abre um chamado escolhendo a etiqueta de patrimônio do equipamento e descrevendo o problema; o sistema já sabe qual é o item e em que setor ele fica. O administrador acompanha todos os chamados, filtra por data, setor, status ou etiqueta, conduz a tratativa até a finalização e mantém os cadastros de setores, etiquetas, itens e usuários. Todas as operações são síncronas: cada ação responde na hora com o resultado.
 
 **Abertura de chamados:** o usuário escolhe a etiqueta (ou setor e item), informa a data e a descrição; o chamado nasce com status Aberto e aparece no relatório, do mais recente para o mais antigo.
 
@@ -9,6 +9,8 @@ Atendix é um help desk web para abrir e acompanhar chamados de reparo de equipa
 **Cadastros:** setores, etiquetas e itens são cadastrados pelo administrador; cada item fica em um setor e tem uma etiqueta exclusiva.
 
 **Primeiro acesso:** toda conta nasce com a senha inicial `mudar@123`, e o sistema exige a troca antes de liberar qualquer outra tela.
+
+**Interface:** responsiva (celular, tablet e desktop), com tema claro e escuro, ícones do PrimeIcons e tipografia baseada no Zendesk Garden (texto de 14px, nada abaixo de 12px). Todos os pares de texto e fundo dos dois temas passam no contraste WCAG AA (4,5:1).
 
 [Como rodar](#como-rodar) · [Usuários para login](#usuários-para-login) · [Perfis e permissões](#perfis-e-permissões) · [Endpoints](#endpoints) · [Abertura de chamados](#abertura-de-chamados) · [Tratativa pelo administrador](#tratativa-pelo-administrador) · [Primeiro acesso](#primeiro-acesso) · [Payload de erro](#payload-de-erro) · [Exemplos de chamada](#exemplos-de-chamada)
 
@@ -157,17 +159,19 @@ O banco já nasce com duas contas, uma de cada perfil:
 | `admin` | `mudar@123` | Administrador (1) |
 | `usuario` | `mudar@123` | Usuário comum (0) |
 
+O login **diferencia maiúsculas de minúsculas**: `admin` entra, `Admin` não. Mesmo assim, não dá para cadastrar `Maria` se já existe `maria`.
+
 No primeiro login de cada conta, o sistema pede uma senha pessoal: de 8 a 128 caracteres, com letra maiúscula, letra minúscula, número e caractere especial, diferente da senha inicial. A partir daí, o login usa a senha nova.
 
 Contas criadas pelo administrador também nascem com `mudar@123`. Se alguém esquecer a senha, o administrador usa **Redefinir senha** e ela volta a ser `mudar@123`, com a troca exigida no próximo acesso.
 
 **Regras de acesso**
 
-- Depois de **5 senhas erradas** para o mesmo login, ele fica bloqueado por **15 minutos** (configurável em `app.security.login.*`).
+- Depois de **5 senhas erradas** para o mesmo login, ele fica bloqueado por **15 minutos** (configurável em `app.security.login.*`). Variar maiúsculas e minúsculas do login conta como o mesmo login.
 - Uma conta **desativada** pelo administrador não entra; os chamados dela continuam no histórico e ela pode ser reativada.
 - Redefinir a senha, mudar o perfil ou desativar uma conta **encerra na hora** as sessões abertas dessa pessoa. Trocar a própria senha encerra as sessões em outros dispositivos.
 
-**Duas contas ao mesmo tempo.** A sessão fica em cookies, que são do navegador inteiro e não de cada aba. Entrar com outra conta numa aba troca a conta de todas as abas abertas, e elas acompanham sozinhas (o mesmo vale para o logout). Para usar o admin e o usuário comum lado a lado, abra o segundo em uma janela anônima ou em outro navegador.
+**Várias contas no mesmo navegador.** Cada aba trabalha com uma conta. No menu da conta (nome no rodapé da barra lateral, ou **Conta** no celular), **Entrar com outra conta** abre uma aba nova para outro login, sem derrubar a conta das outras abas. O mesmo menu lista as contas já abertas no navegador para trocar a aba de uma para outra. Dá para ter até 5 contas ao mesmo tempo; sair encerra só a conta daquela aba.
 
 ---
 
@@ -179,6 +183,7 @@ O perfil é gravado como número: `0` para usuário comum e `1` para administrad
 |---|---|---|
 | Abrir chamado | Sim | Sim |
 | Ver o relatório de chamados | Só os que abriu | Todos |
+| Filtrar chamados por status ou etiqueta | Sim, nos que abriu | Sim |
 | Buscar chamados por data ou setor | Não | Sim |
 | Cancelar chamado ainda aberto | Os que abriu | Qualquer um |
 | Iniciar atendimento e finalizar chamado | Não | Sim |
@@ -209,6 +214,8 @@ A API usa **tokens em cookies**. Não há header `Authorization`: depois do logi
 | `XSRF-TOKEN` | Token anti-CSRF | sessão | todo o site |
 
 Os dois primeiros são `HttpOnly`, `Secure` e `SameSite=Strict`: scripts da página não conseguem lê-los.
+
+**Uma sessão por aba.** Para manter contas diferentes no mesmo navegador, cada aba envia o header `X-Atendix-Session` com um número de `0` a `4`, e cada número tem o seu par de cookies: a sessão `0` usa os nomes acima e as demais ganham o número no fim (`atendix_access_token_1`, `atendix_refresh_token_1`...). Sem o header vale a sessão `0`, então o `curl` e o Swagger funcionam sem mudança. Um número fora da faixa responde `401`.
 
 **Proteção contra CSRF.** Toda requisição que altera dados (POST, PUT, PATCH, DELETE), inclusive o login, precisa repetir o valor do cookie `XSRF-TOKEN` no header `X-XSRF-TOKEN`. O cookie é emitido por `GET /api/v1/auth/csrf` e se mantém durante a navegação. Se uma requisição for recusada por CSRF, a resposta vem com `"error": "Token CSRF inválido"`; a interface web busca um token novo e repete a requisição uma única vez, automaticamente.
 
@@ -405,7 +412,7 @@ Arquivo: `cadastrar-usuario.json`
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `name` | `string` | Sim | Nome completo, até 120 caracteres |
-| `login` | `string` | Sim | De 3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado; gravado em minúsculas |
+| `login` | `string` | Sim | De 3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado. Gravado como digitado; não pode repetir um login existente escrito com outras maiúsculas |
 | `role` | `string` | Sim | `COMMON` (0) ou `ADMIN` (1) |
 
 #### Response — `201 Created`
@@ -432,7 +439,7 @@ Usuário criado; o header `Location` aponta para ele.
 | `400 Bad Request` | Payload inválido |
 | `401 Unauthorized` | Sessão ausente, expirada ou inválida |
 | `403 Forbidden` | Usuário não é administrador ou token CSRF inválido |
-| `409 Conflict` | Login já cadastrado |
+| `409 Conflict` | Login já cadastrado, mesmo com outras maiúsculas |
 
 #### Valores de `role`
 
@@ -924,7 +931,7 @@ Chamado aberto; o header `Location` aponta para ele.
 
 ### `GET /api/v1/tickets`
 
-Relatório de chamados, sempre do mais recente para o mais antigo. O usuário comum vê só os chamados que abriu; o administrador vê todos e pode filtrar.
+Relatório de chamados, sempre do mais recente para o mais antigo. O usuário comum vê só os chamados que abriu; o administrador vê todos. Status e etiqueta filtram para qualquer perfil; data e setor são do administrador. Os filtros se combinam.
 
 #### Parâmetros
 
@@ -932,6 +939,8 @@ Relatório de chamados, sempre do mais recente para o mais antigo. O usuário co
 |---|---|---|---|
 | `date` | `date` | Não | Só chamados desta data. Exclusivo do administrador |
 | `sectorId` | `UUID` | Não | Só chamados de itens deste setor. Exclusivo do administrador |
+| `assetTagId` | `UUID` | Não | Só chamados do item com esta etiqueta |
+| `status` | `string` | Não | `OPEN`, `IN_PROGRESS` ou `FINISHED` |
 | `page` | `integer` | Não | Página, começando em 0 (padrão 0) |
 | `size` | `integer` | Não | Itens por página, de 1 a 100 (padrão 20) |
 
@@ -975,6 +984,30 @@ Página de chamados, com cada item no formato da abertura.
 |---|---|
 | `200 OK` | Página de chamados |
 | `400 Bad Request` | Filtro ou paginação inválidos |
+| `401 Unauthorized` | Sessão ausente, expirada ou inválida |
+| `403 Forbidden` | Usuário comum usando filtro de data ou setor |
+
+### `GET /api/v1/tickets/status-counts`
+
+Quantos chamados há em cada status. Aceita os mesmos filtros da listagem, menos `status` e paginação (`date`, `sectorId`, `assetTagId`), com as mesmas regras de perfil. A interface mostra esses números nas abas de status acima da lista.
+
+#### Response — `200 OK`
+
+```json
+{
+  "open": 3,
+  "inProgress": 2,
+  "finished": 1,
+  "total": 6
+}
+```
+
+#### Status codes
+
+| Código | Situação |
+|---|---|
+| `200 OK` | Contagem por status |
+| `400 Bad Request` | Filtro inválido |
 | `401 Unauthorized` | Sessão ausente, expirada ou inválida |
 | `403 Forbidden` | Usuário comum usando filtro de data ou setor |
 
@@ -1394,6 +1427,12 @@ curl --request POST 'http://localhost:8080/api/v1/tickets' \
   --data-binary '@abrir-chamado.json'
 
 curl --request GET 'http://localhost:8080/api/v1/tickets?sectorId=5f0c3a52-7d1e-4c9b-8a2f-1b3c4d5e6f70&page=0&size=20' \
+  --cookie cookies.txt
+
+curl --request GET 'http://localhost:8080/api/v1/tickets?status=OPEN&assetTagId=9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d' \
+  --cookie cookies.txt
+
+curl --request GET 'http://localhost:8080/api/v1/tickets/status-counts' \
   --cookie cookies.txt
 
 curl --request GET 'http://localhost:8080/api/v1/tickets/8f14e45f-ceea-467a-9575-0f9a2c6e0b1d' \

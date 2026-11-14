@@ -1,10 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Page, errorMessageOf } from '../../../core/api/api';
-import { CreateTicketRequest, Ticket, TicketFilter, TicketStatus } from '../data/ticket.models';
+import {
+  CreateTicketRequest, NO_SEARCH, Ticket, TicketFilter, TicketSearch, TicketStatus, TicketStatusCounts, hasSearch,
+} from '../data/ticket.models';
 import { TicketService } from '../data/ticket.service';
 
-const NO_FILTER: TicketFilter = { date: null, sectorId: null, page: 0 };
+const FIRST_PAGE = 0;
+const NO_FILTER: TicketFilter = { ...NO_SEARCH, page: FIRST_PAGE };
 
 /** State of the tickets workspace; provided by the page, so it lives as long as the screen. */
 @Injectable()
@@ -12,6 +15,7 @@ export class TicketsStore {
   private readonly ticketService = inject(TicketService);
 
   private readonly _page = signal<Page<Ticket> | null>(null);
+  private readonly _counts = signal<TicketStatusCounts | null>(null);
   private readonly _filter = signal<TicketFilter>(NO_FILTER);
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
@@ -21,6 +25,8 @@ export class TicketsStore {
   private readonly _selectionError = signal<string | null>(null);
 
   readonly filter = this._filter.asReadonly();
+  /** Tickets in each status for the current search, whatever status it filters by. */
+  readonly counts = this._counts.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
   readonly selectedId = this._selectedId.asReadonly();
@@ -31,7 +37,7 @@ export class TicketsStore {
   readonly totalElements = computed(() => this._page()?.totalElements ?? 0);
   readonly currentPage = computed(() => this._page()?.page ?? 0);
   readonly totalPages = computed(() => this._page()?.totalPages ?? 0);
-  readonly hasFilters = computed(() => this._filter().date !== null || this._filter().sectorId !== null);
+  readonly hasFilters = computed(() => hasSearch(this._filter()));
   readonly selected = computed(() => {
     const selectedId = this._selectedId();
     const listed = this.tickets().find(ticket => ticket.id === selectedId);
@@ -39,27 +45,24 @@ export class TicketsStore {
     return listed ?? (detached?.id === selectedId ? detached : null);
   });
 
-  /** Loads the current page; a selected ticket outside it (opened by link) is fetched on its own. */
+  /** Reloads the current page and the counts; a selected ticket outside the page is fetched on its own. */
   async load(): Promise<void> {
-    await this.loadPage(true);
+    await this.loadPage(!this.hasFilters(), true);
   }
 
-  /** A search shows only its result: a selected ticket left out of it is not fetched separately. */
-  async applyFilter(date: string | null, sectorId: string | null): Promise<void> {
-    this._filter.set({ date: date || null, sectorId: sectorId || null, page: 0 });
+  /**
+   * Runs a search from its first page. A search shows only its result: a selected ticket left out
+   * of it is not fetched separately. Without any filter, a ticket opened by link still is.
+   */
+  async search(search: TicketSearch): Promise<void> {
+    this._filter.set({ ...search, page: FIRST_PAGE });
     this._detached.set(null);
-    await this.loadPage(false);
-  }
-
-  async clearFilter(): Promise<void> {
-    this._filter.set(NO_FILTER);
-    this._detached.set(null);
-    await this.loadPage(false);
+    await this.loadPage(!hasSearch(search), true);
   }
 
   async goToPage(page: number): Promise<void> {
     this._filter.update(filter => ({ ...filter, page }));
-    await this.load();
+    await this.loadPage(!this.hasFilters(), false);
   }
 
   async select(ticketId: string | null): Promise<void> {
@@ -92,13 +95,19 @@ export class TicketsStore {
     if (this._detached()?.id === updated.id) {
       this._detached.set(updated);
     }
+    this._counts.set(await firstValueFrom(this.ticketService.countByStatus(this._filter())));
   }
 
-  private async loadPage(fetchMissingSelection: boolean): Promise<void> {
+  private async loadPage(fetchMissingSelection: boolean, withCounts: boolean): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
     try {
-      this._page.set(await firstValueFrom(this.ticketService.list(this._filter())));
+      const [page, counts] = await Promise.all([
+        firstValueFrom(this.ticketService.list(this._filter())),
+        withCounts ? firstValueFrom(this.ticketService.countByStatus(this._filter())) : Promise.resolve(this._counts()),
+      ]);
+      this._page.set(page);
+      this._counts.set(counts);
       if (fetchMissingSelection) {
         await this.fetchSelectedIfMissing();
       }

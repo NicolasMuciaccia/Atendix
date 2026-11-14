@@ -10,6 +10,8 @@ import { focusFirstInvalid } from '../../../shared/format/focus-first-invalid';
 import { Button } from '../../../shared/ui/button';
 import { Field } from '../../../shared/ui/field';
 import { Icon } from '../../../shared/ui/icon';
+import { PasswordInput } from '../../../shared/ui/password-input';
+import { ThemeToggle } from '../../../shared/ui/theme-toggle';
 import {
   PASSWORD_RULES,
   forbiddenPasswordValidator,
@@ -20,7 +22,7 @@ import {
 @Component({
   selector: 'atx-first-access-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Button, Field, Icon],
+  imports: [ReactiveFormsModule, Button, Field, Icon, PasswordInput, ThemeToggle],
   templateUrl: './first-access-page.html',
   styleUrls: ['../auth-layout.scss', './first-access-page.scss'],
 })

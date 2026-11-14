@@ -71,7 +71,7 @@
             <span role="cell" class="cell meta" data-label="Cadastro">{{ user.createdAt | dateTime }}</span>
             <span role="cell" class="actions">
               @if (user.id !== currentUserId()) {
-                <button atxButton variant="ghost" size="sm" iconLeft="refresh-cw" type="button"
+                <button atxButton variant="ghost" size="sm" iconLeft="refresh" type="button"
                         [disabled]="pendingUserId() === user.id" (click)="resetTarget.set(user)">
                   Redefinir senha
                 </button>
@@ -133,6 +133,6 @@
             (closed)="resetTarget.set(null)">
   <div dialogActions>
     <button atxButton variant="secondary" type="button" (click)="resetTarget.set(null)">Cancelar</button>
-    <button atxButton iconLeft="refresh-cw" type="button" (click)="confirmReset()">Redefinir senha</button>
+    <button atxButton iconLeft="refresh" type="button" (click)="confirmReset()">Redefinir senha</button>
   </div>
 </atx-dialog>

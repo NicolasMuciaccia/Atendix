@@ -1,15 +1,16 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
 
-/** What one tab tells the others about the session they all share through the cookies. */
+/** What one tab tells the others about the session of a slot they may share. */
 export type SessionEvent =
-  | { type: 'signed-in'; userId: string }
-  | { type: 'signed-out' };
+  | { type: 'signed-in'; slot: number; userId: string }
+  | { type: 'signed-out'; slot: number };
 
 const CHANNEL_NAME = 'atendix-session';
 
 /**
- * Cookies are shared by every tab of the browser: signing in or out in one tab changes the session
- * of all of them. This channel lets the other tabs follow instead of acting on a stale user.
+ * Tabs on the same slot share that slot's session cookies: signing in or out in one of them changes
+ * the session of all of them. This channel lets those tabs follow instead of acting on a stale user;
+ * tabs on other slots ignore the message.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionChannel {

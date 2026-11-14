@@ -3,10 +3,12 @@ package com.uvv.atendix.controller;
 import com.uvv.atendix.ApiErrorResponse;
 import com.uvv.atendix.model.dto.AuthenticatedUser;
 import com.uvv.atendix.model.request.ChangeTicketStatusRequest;
+import com.uvv.atendix.model.request.CountTicketsRequest;
 import com.uvv.atendix.model.request.CreateTicketRequest;
 import com.uvv.atendix.model.request.ListTicketsRequest;
 import com.uvv.atendix.model.response.PageResponse;
 import com.uvv.atendix.model.response.TicketResponse;
+import com.uvv.atendix.model.response.TicketStatusCountsResponse;
 import com.uvv.atendix.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -71,7 +73,8 @@ public class TicketController {
     @GetMapping
     @Operation(summary = "Lista os chamados",
             description = "Ordenado da data mais recente para a mais antiga. O usuário comum vê só os chamados que "
-                    + "abriu; o administrador vê todos e pode filtrar por data ou setor.")
+                    + "abriu; o administrador vê todos. Todos podem filtrar por status e etiqueta; data e setor "
+                    + "são exclusivos do administrador.")
     @ApiResponse(responseCode = "200", description = "Página de chamados")
     @ApiResponse(responseCode = "400", description = "Filtro ou paginação inválidos",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
@@ -82,6 +85,22 @@ public class TicketController {
     public PageResponse<TicketResponse> listTickets(@Valid @ParameterObject ListTicketsRequest request,
                                                     AuthenticatedUser currentUser) {
         return ticketService.listTickets(request, currentUser);
+    }
+
+    @GetMapping(ApiRoutes.TICKET_STATUS_COUNTS)
+    @Operation(summary = "Conta os chamados por status",
+            description = "Usa os mesmos filtros da listagem, menos o status, e a mesma visibilidade: o usuário "
+                    + "comum conta só os chamados que abriu.")
+    @ApiResponse(responseCode = "200", description = "Quantidade por status")
+    @ApiResponse(responseCode = "400", description = "Filtro inválido",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Sessão ausente, expirada ou inválida",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "Usuário comum usando filtro de data ou setor",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    public TicketStatusCountsResponse countTicketsByStatus(@Valid @ParameterObject CountTicketsRequest request,
+                                                           AuthenticatedUser currentUser) {
+        return ticketService.countByStatus(request, currentUser);
     }
 
     @GetMapping("/{ticketId}")

@@ -27,16 +27,17 @@ const BOX: Record<'sm' | 'md' | 'lg', { box: number; icon: number }> = {
     :host {
       display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
       padding: 0; border: 1px solid transparent; border-radius: var(--radius-md);
-      background: transparent; color: var(--ink-600); cursor: pointer;
+      background: transparent; color: var(--text-muted); cursor: pointer;
       transition: background var(--duration-fast) var(--ease-standard);
     }
-    :host(:hover) { background: var(--surface-hover); color: var(--ink-800); text-decoration: none; }
+    :host(:hover) { background: var(--surface-hover); color: var(--text-strong); text-decoration: none; }
     :host(:active) { transform: scale(0.96); }
     :host([disabled]) { opacity: .45; cursor: not-allowed; }
-    :host(.atx-icon-button--outline) { background: var(--white); border-color: var(--border-default); box-shadow: var(--shadow-xs); color: var(--ink-700); }
+    @media (pointer: coarse) { :host { min-width: var(--touch-min); min-height: var(--touch-min); } }
+    :host(.atx-icon-button--outline) { background: var(--surface-card); border-color: var(--border-default); box-shadow: var(--shadow-xs); color: var(--text-body); }
     :host(.atx-icon-button--outline:hover) { background: var(--surface-hover); }
     :host(.atx-icon-button--inverse) { color: var(--nav-text-muted); }
-    :host(.atx-icon-button--inverse:hover) { background: var(--nav-item-hover); color: var(--white); }
+    :host(.atx-icon-button--inverse:hover) { background: var(--nav-item-hover); color: var(--nav-text-active); }
   `,
 })
 export class IconButton {

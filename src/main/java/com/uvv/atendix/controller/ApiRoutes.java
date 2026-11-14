@@ -24,6 +24,7 @@ public final class ApiRoutes {
 
     public static final String TICKETS = API_V1 + "/tickets";
     public static final String TICKET_STATUS = "/{ticketId}/status";
+    public static final String TICKET_STATUS_COUNTS = "/status-counts";
 
     private ApiRoutes() {
     }

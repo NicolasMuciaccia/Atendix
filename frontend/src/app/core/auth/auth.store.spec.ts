@@ -5,6 +5,9 @@ import { Router, provideRouter } from '@angular/router';
 import { User } from './auth.models';
 import { AuthStore } from './auth.store';
 import { SessionChannel, SessionEvent } from './session-channel';
+import { SESSION_SLOT_HEADER, SessionSlots } from './session-slots';
+import { sessionSlotInterceptor } from './session-slot.interceptor';
+import { withInterceptors } from '@angular/common/http';
 
 const ADMIN: User = {
   id: 'u-admin', name: 'Administrador', login: 'admin', role: 'ADMIN',
@@ -37,9 +40,11 @@ describe('AuthStore', () => {
   let router: Router;
 
   beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([sessionSlotInterceptor])),
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: SessionChannel, useClass: FakeSessionChannel },
@@ -69,13 +74,49 @@ describe('AuthStore', () => {
   it('should tell the other tabs about a new sign-in', async () => {
     await signIn(ADMIN);
 
-    expect(channel.published).toEqual([{ type: 'signed-in', userId: ADMIN.id }]);
+    expect(channel.published).toEqual([{ type: 'signed-in', slot: 0, userId: ADMIN.id }]);
+  });
+
+  it('should list the signed-in account for the other tabs of the browser', async () => {
+    await signIn(ADMIN);
+
+    expect(TestBed.inject(SessionSlots).accounts()).toEqual([
+      { slot: 0, userId: ADMIN.id, name: ADMIN.name, login: ADMIN.login },
+    ]);
+  });
+
+  it('should ignore a sign-out of another account of the browser', async () => {
+    await signIn(ADMIN);
+
+    channel.fromOtherTab({ type: 'signed-out', slot: 1 });
+    await settle();
+
+    expect(store.status()).toBe('authenticated');
+  });
+
+  it('should open a tab for another account on a free slot, signed out', async () => {
+    await signIn(ADMIN);
+
+    const start = store.start(new URL('http://localhost/login?nova-conta=1'));
+    backend.expectOne('/api/v1/auth/csrf').flush(null);
+    await start;
+
+    expect(TestBed.inject(SessionSlots).current()).toBe(1);
+    expect(store.status()).toBe('anonymous');
+    const login = store.login({ login: COMMON.login, password: 'x' });
+    backend.expectOne('/api/v1/auth/csrf').flush(null);
+    await Promise.resolve();
+    const request = backend.expectOne('/api/v1/auth/login');
+    expect(request.request.headers.get(SESSION_SLOT_HEADER)).toBe('1');
+    request.flush(COMMON);
+    await login;
+    expect(TestBed.inject(SessionSlots).accounts().map(account => account.login)).toEqual(['admin', 'usuario']);
   });
 
   it('should leave the workspace when another tab signs out', async () => {
     await signIn(ADMIN);
 
-    channel.fromOtherTab({ type: 'signed-out' });
+    channel.fromOtherTab({ type: 'signed-out', slot: 0 });
     await settle();
 
     expect(store.status()).toBe('anonymous');
@@ -85,7 +126,7 @@ describe('AuthStore', () => {
   it('should switch to the account another tab signed in with', async () => {
     await signIn(ADMIN);
 
-    channel.fromOtherTab({ type: 'signed-in', userId: COMMON.id });
+    channel.fromOtherTab({ type: 'signed-in', slot: 0, userId: COMMON.id });
     await settle();
     backend.expectOne('/api/v1/auth/csrf').flush(null);
     await settle();

@@ -1,4 +1,6 @@
 :root{
+  color-scheme:light;
+
   /* Navy — navigation, primary CTA, headings */
   --navy-950:#0B1630;
   --navy-900:#101F3C;
@@ -50,28 +52,37 @@
   --violet-500:#7C66F0;
   --violet-600:#6450D6;
 
-  /* ---- Semantic aliases ---- */
+  /* ---- Semantic aliases (light) ----
+     Text colors keep WCAG AA (4.5:1) on the surfaces they sit on. */
   --bg-app:var(--ink-50);
   --bg-subtle:var(--blue-50);
   --surface-card:var(--white);
   --surface-panel:var(--white);
+  --surface-raised:var(--white);
+  --surface-input:var(--white);
   --surface-muted:var(--ink-50);
   --surface-sunken:var(--ink-100);
   --surface-selected:var(--blue-50);
   --surface-hover:#F4F6FA;
+  --surface-press:var(--ink-100);
   --surface-message:#F4F6FA;
   --surface-message-agent:#EEF3FF;
   --surface-inverse:var(--navy-900);
+  --skeleton:var(--ink-100);
+  --selection:var(--blue-200);
 
   --text-strong:var(--ink-900);
   --text-body:var(--ink-700);
-  --text-muted:var(--ink-500);
-  --text-subtle:var(--ink-400);
+  --text-muted:#5A6680;
+  --text-subtle:#5F6A85;
   --text-inverse:var(--white);
   --text-inverse-muted:var(--navy-400);
-  --text-link:var(--blue-500);
-  --text-link-hover:var(--blue-600);
-  --text-accent:var(--blue-500);
+  --text-link:var(--blue-600);
+  --text-link-hover:var(--blue-700);
+  --text-accent:var(--blue-600);
+  --text-on-primary:var(--white);
+  --text-on-accent:var(--white);
+  --text-on-danger:var(--white);
 
   --border-subtle:var(--ink-150);
   --border-default:var(--ink-200);
@@ -84,41 +95,49 @@
   --action-accent:var(--blue-500);
   --action-accent-hover:var(--blue-600);
   --action-accent-press:var(--blue-700);
+  --action-danger:var(--red-600);
+  --action-danger-hover:#B42D33;
+  --action-danger-soft:var(--red-100);
 
   --nav-bg:var(--navy-900);
+  --nav-border:var(--navy-800);
   --nav-item-active:var(--navy-700);
   --nav-item-hover:var(--navy-800);
   --nav-text:#D5DCEA;
   --nav-text-active:var(--white);
   --nav-text-muted:var(--navy-400);
   --nav-badge-bg:var(--navy-700);
+  --nav-indicator:var(--blue-400);
 
   --positive:var(--green-500);
-  --positive-text:var(--green-600);
+  --positive-text:#157052;
   --positive-bg:var(--green-50);
   --attention:var(--amber-500);
-  --attention-text:var(--amber-600);
+  --attention-text:#8F5208;
   --attention-bg:var(--amber-50);
   --danger:var(--red-500);
-  --danger-text:var(--red-600);
+  --danger-text:#B42D33;
   --danger-bg:var(--red-50);
+  --danger-ring:rgba(229,72,77,.18);
   --info:var(--blue-500);
-  --info-text:var(--blue-600);
+  --info-text:var(--blue-700);
   --info-bg:var(--blue-100);
 
   /* Priority + category chips */
   --priority-high-bg:var(--red-50);
-  --priority-high-text:var(--red-600);
+  --priority-high-text:#B42D33;
   --priority-medium-bg:var(--amber-50);
-  --priority-medium-text:var(--amber-600);
+  --priority-medium-text:#8F5208;
   --priority-low-bg:var(--green-50);
-  --priority-low-text:var(--green-600);
+  --priority-low-text:#157052;
   --tag-neutral-bg:#EDF1F8;
   --tag-neutral-text:var(--ink-600);
+  --tag-neutral-dot:var(--ink-400);
   --tag-violet-bg:var(--violet-50);
   --tag-violet-text:var(--violet-600);
+  --tag-violet-dot:var(--violet-500);
   --tag-blue-bg:var(--blue-100);
-  --tag-blue-text:var(--blue-600);
+  --tag-blue-text:var(--blue-700);
 
   /* KPI icon tiles */
   --tile-blue-bg:var(--blue-100);
@@ -127,4 +146,137 @@
   --tile-amber-fg:var(--amber-500);
   --tile-green-bg:var(--green-50);
   --tile-green-fg:var(--green-500);
+  --tile-danger-bg:var(--red-50);
+  --tile-danger-fg:var(--red-500);
+}
+
+/*
+ * Dark theme, modelled on the dark variables of Zendesk Garden (help desk design system):
+ * near-black blue-grey surfaces stepped by elevation and light grey text instead of pure white,
+ * which glares on dark backgrounds. Status hues are lightened to keep 4.5:1 on their tinted chips.
+ */
+@mixin dark-theme{
+  color-scheme:dark;
+
+  --dark-0:#0A0D0E;
+  --dark-1:#151A1E;
+  --dark-2:#1C2227;
+  --dark-3:#242B31;
+  --dark-4:#293239;
+  --dark-5:#39434B;
+  --dark-6:#5C6970;
+
+  --bg-app:var(--dark-1);
+  --bg-subtle:#1A2236;
+  --surface-card:var(--dark-2);
+  --surface-panel:var(--dark-2);
+  --surface-raised:var(--dark-3);
+  --surface-input:#0F1316;
+  --surface-muted:var(--dark-1);
+  --surface-sunken:var(--dark-4);
+  --surface-selected:#1F2A4A;
+  --surface-hover:var(--dark-3);
+  --surface-press:var(--dark-4);
+  --surface-message:var(--dark-3);
+  --surface-message-agent:#1F2A4A;
+  --surface-inverse:var(--dark-0);
+  --skeleton:var(--dark-4);
+  --selection:#2E3F7A;
+
+  --text-strong:#EEF0F2;
+  --text-body:#D8DCDE;
+  --text-muted:#A3ADB5;
+  --text-subtle:#919CA5;
+  --text-inverse:#EEF0F2;
+  --text-inverse-muted:#A3ADB5;
+  --text-link:#8EA4FF;
+  --text-link-hover:#B4C3FF;
+  --text-accent:#8EA4FF;
+  --text-on-primary:var(--white);
+  --text-on-accent:var(--white);
+  --text-on-danger:var(--white);
+
+  --border-subtle:var(--dark-4);
+  --border-default:var(--dark-5);
+  --border-strong:var(--dark-6);
+  --border-focus:#6381F8;
+
+  --action-primary:var(--blue-600);
+  --action-primary-hover:var(--blue-500);
+  --action-primary-press:var(--blue-700);
+  --action-accent:var(--blue-600);
+  --action-accent-hover:var(--blue-500);
+  --action-accent-press:var(--blue-700);
+  --action-danger:#C9343A;
+  --action-danger-hover:#E5484D;
+  --action-danger-soft:#3A1D1F;
+
+  --nav-bg:var(--dark-0);
+  --nav-border:var(--dark-4);
+  --nav-item-active:var(--dark-3);
+  --nav-item-hover:var(--dark-2);
+  --nav-text:#D8DCDE;
+  --nav-text-active:#EEF0F2;
+  --nav-text-muted:#A3ADB5;
+  --nav-badge-bg:var(--dark-4);
+  --nav-indicator:#8EA4FF;
+
+  --positive:#3FBF8A;
+  --positive-text:#5DD3A2;
+  --positive-bg:#15302A;
+  --attention:#F4A340;
+  --attention-text:#F5B85C;
+  --attention-bg:#33270F;
+  --danger:#F0656A;
+  --danger-text:#FF8A8E;
+  --danger-bg:#3A1D1F;
+  --danger-ring:rgba(240,101,106,.28);
+  --info:#6381F8;
+  --info-text:#8EA4FF;
+  --info-bg:#1F2A4A;
+
+  --priority-high-bg:#3A1D1F;
+  --priority-high-text:#FF8A8E;
+  --priority-medium-bg:#33270F;
+  --priority-medium-text:#F5B85C;
+  --priority-low-bg:#15302A;
+  --priority-low-text:#5DD3A2;
+  --tag-neutral-bg:var(--dark-4);
+  --tag-neutral-text:#D8DCDE;
+  --tag-neutral-dot:#A3ADB5;
+  --tag-violet-bg:#2A2348;
+  --tag-violet-text:#B9A8FF;
+  --tag-violet-dot:#9C88FF;
+  --tag-blue-bg:#1F2A4A;
+  --tag-blue-text:#8EA4FF;
+
+  --tile-blue-bg:#1F2A4A;
+  --tile-blue-fg:#8EA4FF;
+  --tile-amber-bg:#33270F;
+  --tile-amber-fg:#F5B85C;
+  --tile-green-bg:#15302A;
+  --tile-green-fg:#5DD3A2;
+  --tile-danger-bg:#3A1D1F;
+  --tile-danger-fg:#FF8A8E;
+
+  --shadow-xs:0 1px 2px rgba(0,0,0,.4);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.3);
+  --shadow-md:0 2px 4px rgba(0,0,0,.35),0 8px 20px rgba(0,0,0,.4);
+  --shadow-lg:0 4px 8px rgba(0,0,0,.35),0 16px 40px rgba(0,0,0,.5);
+  --shadow-xl:0 8px 16px rgba(0,0,0,.4),0 28px 64px rgba(0,0,0,.55);
+  --shadow-inset:inset 0 1px 2px rgba(0,0,0,.4);
+  --focus-ring:0 0 0 3px rgba(99,129,248,.45);
+  --focus-ring-strong:0 0 0 2px var(--dark-1),0 0 0 4px #8EA4FF;
+  --scrim:rgba(0,0,0,.6);
+}
+
+/* An explicit choice wins; without one the app follows the operating system */
+:root[data-theme='dark']{
+  @include dark-theme;
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme='light']){
+    @include dark-theme;
+  }
 }

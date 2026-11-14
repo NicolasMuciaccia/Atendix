@@ -1,13 +1,14 @@
 package com.uvv.atendix.security;
 
-import jakarta.servlet.http.Cookie;
+import com.uvv.atendix.util.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.util.WebUtils;
 
 /**
- * Reads the access token from its HttpOnly cookie instead of the Authorization header.
+ * Reads the access token from the HttpOnly cookie of the request's session slot instead of the
+ * Authorization header.
  */
 public class CookieBearerTokenResolver implements BearerTokenResolver {
 
@@ -27,10 +28,11 @@ public class CookieBearerTokenResolver implements BearerTokenResolver {
         if (ignoredRequests.matches(request)) {
             return null;
         }
-        Cookie accessTokenCookie = WebUtils.getCookie(request, AuthCookies.ACCESS_TOKEN);
-        if (accessTokenCookie == null || accessTokenCookie.getValue().isBlank()) {
-            return null;
+        try {
+            SessionSlot slot = SessionSlot.fromHeader(request.getHeader(SessionSlot.HEADER));
+            return AuthCookies.accessToken(request, slot);
+        } catch (BusinessException exception) {
+            throw new InvalidBearerTokenException(exception.getMessage(), exception);
         }
-        return accessTokenCookie.getValue();
     }
 }

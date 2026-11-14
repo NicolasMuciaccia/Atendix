@@ -4,10 +4,20 @@
   <meta charset="utf-8">
   <title>Atendix</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101F3C">
+  <meta name="color-scheme" content="light dark">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preload" href="fonts/Inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Applies a saved light/dark choice before the first paint, so the page never flashes the other theme -->
+  <script>
+    (function () {
+      var theme = localStorage.getItem('atendix.theme');
+      if (theme === 'light' || theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+    })();
+  </script>
 </head>
 <body>
   <atx-root></atx-root>

@@ -14,13 +14,13 @@ import { Icon } from '../../shared/ui/icon';
     </header>
     <nav class="tabs" aria-label="Cadastros">
       <a routerLink="setores" routerLinkActive="active" ariaCurrentWhenActive="page">
-        <atx-icon name="building-2" [size]="15" /> Setores
+        <atx-icon name="building" [size]="15" /> Setores
       </a>
       <a routerLink="etiquetas" routerLinkActive="active" ariaCurrentWhenActive="page">
         <atx-icon name="tag" [size]="15" /> Etiquetas
       </a>
       <a routerLink="itens" routerLinkActive="active" ariaCurrentWhenActive="page">
-        <atx-icon name="layers" [size]="15" /> Itens
+        <atx-icon name="desktop" [size]="15" /> Itens
       </a>
     </nav>
     <div class="content"><router-outlet /></div>
@@ -33,11 +33,11 @@ import { Icon } from '../../shared/ui/icon';
     .lead { font-size: var(--text-sm); color: var(--text-muted); }
     .tabs { display: flex; gap: var(--space-5); padding: 0 var(--space-6); border-bottom: 1px solid var(--border-subtle); }
     .tabs a { position: relative; display: inline-flex; align-items: center; gap: var(--space-1-5); height: 44px;
-              color: var(--ink-500); font-size: var(--text-base); font-weight: var(--weight-medium); }
-    .tabs a:hover { color: var(--ink-900); text-decoration: none; }
-    .tabs a.active { color: var(--ink-900); font-weight: var(--weight-semibold); }
+              color: var(--text-muted); font-size: var(--text-base); font-weight: var(--weight-medium); }
+    .tabs a:hover { color: var(--text-strong); text-decoration: none; }
+    .tabs a.active { color: var(--text-strong); font-weight: var(--weight-semibold); }
     .tabs a.active::after { content: ''; position: absolute; right: -2px; bottom: -1px; left: -2px; height: 2px;
-                            border-radius: 2px; background: var(--blue-500); }
+                            border-radius: 2px; background: var(--action-accent); }
     .content { flex: 1; min-height: 0; padding: var(--space-5) var(--space-6); overflow-y: auto; background: var(--bg-app); }
     @media (max-width: 959px) {
       .topbar, .tabs { padding-right: var(--space-4); padding-left: var(--space-4); }

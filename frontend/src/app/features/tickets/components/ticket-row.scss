@@ -13,7 +13,7 @@
   }
 
   &:focus-visible {
-    box-shadow: inset 0 0 0 2px var(--blue-500);
+    box-shadow: inset 0 0 0 2px var(--action-accent);
   }
 }
 
@@ -28,7 +28,7 @@
     left: 0;
     width: 2.5px;
     border-radius: 2px;
-    background: var(--blue-500);
+    background: var(--action-accent);
   }
 }
 
@@ -71,7 +71,7 @@
   margin-top: var(--space-0-5);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  color: var(--ink-800);
+  color: var(--text-strong);
 }
 
 .preview {

@@ -22,13 +22,13 @@ const ICON_SIZE: Record<ButtonSize, number> = { sm: 14, md: 15, lg: 17 };
   },
   template: `
     @if (loading()) {
-      <atx-icon name="loader" class="atx-spin" [size]="iconSize()" [strokeWidth]="2" />
+      <atx-icon name="spinner" class="atx-spin" [size]="iconSize()" />
     } @else if (iconLeft(); as icon) {
-      <atx-icon [name]="icon" [size]="iconSize()" [strokeWidth]="2" />
+      <atx-icon [name]="icon" [size]="iconSize()" />
     }
     <ng-content />
     @if (iconRight(); as icon) {
-      <atx-icon [name]="icon" [size]="iconSize()" [strokeWidth]="2" />
+      <atx-icon [name]="icon" [size]="iconSize()" />
     }
   `,
   styleUrl: './button.scss',

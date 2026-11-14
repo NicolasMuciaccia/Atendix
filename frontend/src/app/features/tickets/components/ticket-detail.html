@@ -31,7 +31,7 @@
             @case ('OPEN') {
               <p class="handling-text">Ninguém começou a atender este chamado ainda. Inicie o atendimento para poder finalizá-lo.</p>
               <div class="handling-actions">
-                <button atxButton iconLeft="zap" type="button" [loading]="busy() === 'status'"
+                <button atxButton iconLeft="bolt" type="button" [loading]="busy() === 'status'"
                         (click)="statusChange.emit('IN_PROGRESS')">Iniciar atendimento</button>
               </div>
             }
@@ -46,7 +46,7 @@
             }
             @case ('FINISHED') {
               <p class="handling-text">
-                <atx-icon name="circle-check" [size]="15" />
+                <atx-icon name="check-circle" [size]="15" />
                 Finalizado por {{ ticket().finishedByName }} em {{ ticket().finishedAt! | dateTime }}.
               </p>
             }
@@ -82,13 +82,13 @@
       @if (canCancel()) {
         <atx-panel-section title="Cancelar chamado">
           <p class="note">Disponível enquanto ninguém iniciou o atendimento. O chamado é excluído do sistema.</p>
-          <button atxButton variant="danger" iconLeft="trash-2" type="button" [loading]="busy() === 'cancel'"
+          <button atxButton variant="danger" iconLeft="trash" type="button" [loading]="busy() === 'cancel'"
                   (click)="cancelRequest.emit()">Cancelar chamado</button>
         </atx-panel-section>
       } @else if (ticket().status !== 'OPEN') {
         <atx-panel-section>
           <p class="note">
-            <atx-icon name="info" [size]="14" />
+            <atx-icon name="info-circle" [size]="14" />
             O atendimento já começou, então o chamado não pode mais ser cancelado.
           </p>
         </atx-panel-section>

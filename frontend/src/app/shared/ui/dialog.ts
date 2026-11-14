@@ -20,7 +20,7 @@ let nextDialogId = 0;
             <p class="description">{{ description() }}</p>
           }
         </div>
-        <button atxIconButton icon="x" label="Fechar" size="sm" type="button" (click)="closed.emit()"></button>
+        <button atxIconButton icon="times" label="Fechar" size="sm" type="button" (click)="closed.emit()"></button>
       </header>
       <div class="body"><ng-content /></div>
       <footer class="actions"><ng-content select="[dialogActions]" /></footer>

@@ -116,7 +116,7 @@ public class UserService {
     }
 
     private void validateLoginAvailable(String login) {
-        if (userRepository.existsByLogin(User.normalizeLogin(login))) {
+        if (userRepository.existsByLoginIgnoreCase(User.normalizeLogin(login))) {
             throw new BusinessConflictException(LOGIN_TAKEN);
         }
     }

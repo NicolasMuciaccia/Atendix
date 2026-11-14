@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 const TONES = [
-  { bg: 'var(--blue-100)', fg: 'var(--blue-700)' },
-  { bg: 'var(--violet-100)', fg: 'var(--violet-600)' },
-  { bg: 'var(--green-100)', fg: 'var(--green-600)' },
-  { bg: 'var(--amber-100)', fg: 'var(--amber-600)' },
-  { bg: 'var(--ink-150)', fg: 'var(--ink-700)' },
+  { bg: 'var(--tag-blue-bg)', fg: 'var(--tag-blue-text)' },
+  { bg: 'var(--tag-violet-bg)', fg: 'var(--tag-violet-text)' },
+  { bg: 'var(--priority-low-bg)', fg: 'var(--priority-low-text)' },
+  { bg: 'var(--priority-medium-bg)', fg: 'var(--priority-medium-text)' },
+  { bg: 'var(--tag-neutral-bg)', fg: 'var(--tag-neutral-text)' },
 ];
 const HASH_MULTIPLIER = 31;
 const INITIALS_SCALE = 0.36;

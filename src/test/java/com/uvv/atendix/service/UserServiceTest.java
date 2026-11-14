@@ -92,7 +92,7 @@ class UserServiceTest {
 
     @Test
     void shouldCreateUserWithInitialPasswordAndPendingChange() {
-        when(userRepository.existsByLogin("maria.souza")).thenReturn(false);
+        when(userRepository.existsByLoginIgnoreCase("Maria.Souza")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UserResponse response = userService.createUser(new CreateUserRequest("Maria Souza", "Maria.Souza", Role.COMMON));
@@ -106,9 +106,9 @@ class UserServiceTest {
 
     @Test
     void shouldRejectLoginAlreadyTaken() {
-        when(userRepository.existsByLogin("usuario")).thenReturn(true);
+        when(userRepository.existsByLoginIgnoreCase("Usuario")).thenReturn(true);
 
-        assertThatThrownBy(() -> userService.createUser(new CreateUserRequest("Outro", "usuario", Role.COMMON)))
+        assertThatThrownBy(() -> userService.createUser(new CreateUserRequest("Outro", "Usuario", Role.COMMON)))
                 .isInstanceOf(BusinessConflictException.class);
         verify(userRepository, never()).save(any(User.class));
     }

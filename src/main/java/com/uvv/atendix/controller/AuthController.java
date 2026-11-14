@@ -7,6 +7,7 @@ import com.uvv.atendix.model.request.ChangePasswordRequest;
 import com.uvv.atendix.model.request.LoginRequest;
 import com.uvv.atendix.model.response.UserResponse;
 import com.uvv.atendix.security.AuthCookies;
+import com.uvv.atendix.security.SessionSlot;
 import com.uvv.atendix.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,11 +16,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,7 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(ApiRoutes.AUTH)
 @Tag(name = "Autenticação", description = "Login, renovação de sessão, logout e troca de senha. "
-        + "Os tokens trafegam apenas em cookies HttpOnly.")
+        + "Os tokens trafegam apenas em cookies HttpOnly. Para manter contas diferentes logadas no mesmo "
+        + "navegador, cada aba envia o header " + SessionSlot.HEADER + " (0 a 4) e cada número tem os seus "
+        + "cookies; sem o header vale a sessão 0.")
 public class AuthController {
 
     private final AuthService authService;
@@ -68,8 +71,9 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "403", description = "Token CSRF ausente ou inválido",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<UserResponse> login(@RequestBody @Valid LoginRequest request) {
-        return withSessionCookies(authService.login(request));
+    public ResponseEntity<UserResponse> login(@RequestBody @Valid LoginRequest request,
+                                              @Parameter(hidden = true) SessionSlot slot) {
+        return withSessionCookies(slot, authService.login(request));
     }
 
     @PostMapping(ApiRoutes.REFRESH)
@@ -81,10 +85,9 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "403", description = "Token CSRF ausente ou inválido",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<UserResponse> refresh(
-            @Parameter(hidden = true)
-            @CookieValue(name = AuthCookies.REFRESH_TOKEN, required = false) String refreshToken) {
-        return withSessionCookies(authService.refresh(refreshToken));
+    public ResponseEntity<UserResponse> refresh(@Parameter(hidden = true) SessionSlot slot,
+                                                HttpServletRequest httpRequest) {
+        return withSessionCookies(slot, authService.refresh(AuthCookies.refreshToken(httpRequest, slot)));
     }
 
     @PostMapping(ApiRoutes.LOGOUT)
@@ -94,13 +97,10 @@ public class AuthController {
     @ApiResponse(responseCode = "204", description = "Sessão encerrada")
     @ApiResponse(responseCode = "403", description = "Token CSRF ausente ou inválido",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<Void> logout(
-            @Parameter(hidden = true)
-            @CookieValue(name = AuthCookies.ACCESS_TOKEN, required = false) String accessToken,
-            @Parameter(hidden = true)
-            @CookieValue(name = AuthCookies.REFRESH_TOKEN, required = false) String refreshToken) {
-        authService.logout(accessToken, refreshToken);
-        return ResponseEntity.noContent().headers(authCookies.clearedCookies()).build();
+    public ResponseEntity<Void> logout(@Parameter(hidden = true) SessionSlot slot,
+                                       HttpServletRequest httpRequest) {
+        authService.logout(AuthCookies.accessToken(httpRequest, slot), AuthCookies.refreshToken(httpRequest, slot));
+        return ResponseEntity.noContent().headers(authCookies.clearedCookies(slot)).build();
     }
 
     @PutMapping(ApiRoutes.PASSWORD)
@@ -118,12 +118,13 @@ public class AuthController {
     public ResponseEntity<UserResponse> changePassword(
             AuthenticatedUser currentUser,
             @RequestBody @Valid ChangePasswordRequest request,
-            @Parameter(hidden = true)
-            @CookieValue(name = AuthCookies.REFRESH_TOKEN, required = false) String refreshToken) {
-        return withSessionCookies(authService.changePassword(currentUser, request, refreshToken));
+            @Parameter(hidden = true) SessionSlot slot,
+            HttpServletRequest httpRequest) {
+        String refreshToken = AuthCookies.refreshToken(httpRequest, slot);
+        return withSessionCookies(slot, authService.changePassword(currentUser, request, refreshToken));
     }
 
-    private ResponseEntity<UserResponse> withSessionCookies(AuthSession session) {
-        return ResponseEntity.ok().headers(authCookies.sessionCookies(session.tokens())).body(session.user());
+    private ResponseEntity<UserResponse> withSessionCookies(SessionSlot slot, AuthSession session) {
+        return ResponseEntity.ok().headers(authCookies.sessionCookies(slot, session.tokens())).body(session.user());
     }
 }

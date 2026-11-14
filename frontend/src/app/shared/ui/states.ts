@@ -31,11 +31,11 @@ export class EmptyState {
   imports: [Icon, Button],
   host: { role: 'alert' },
   template: `
-    <span class="tile tile--danger"><atx-icon name="circle-alert" [size]="20" /></span>
+    <span class="tile tile--danger"><atx-icon name="exclamation-circle" [size]="20" /></span>
     <p class="title">{{ title() }}</p>
     <p class="description">{{ message() }}</p>
     <div class="actions">
-      <button atxButton variant="secondary" size="sm" iconLeft="refresh-cw" type="button" (click)="retry.emit()">
+      <button atxButton variant="secondary" size="sm" iconLeft="refresh" type="button" (click)="retry.emit()">
         Tentar de novo
       </button>
     </div>

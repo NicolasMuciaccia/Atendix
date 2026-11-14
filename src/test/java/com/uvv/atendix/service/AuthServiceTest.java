@@ -64,7 +64,7 @@ class AuthServiceTest {
         givenUserIsRegistered();
         givenTokensAreIssued();
 
-        AuthSession session = authService.login(new LoginRequest("USUARIO", TestProperties.INITIAL_PASSWORD));
+        AuthSession session = authService.login(new LoginRequest(" usuario ", TestProperties.INITIAL_PASSWORD));
 
         assertThat(session.user().id()).isEqualTo(user.getId());
         assertThat(session.user().mustChangePassword()).isTrue();
@@ -83,6 +83,28 @@ class AuthServiceTest {
         givenUserIsRegistered();
         for (int attempt = 0; attempt < TestProperties.MAX_LOGIN_FAILURES; attempt++) {
             assertThatThrownBy(() -> authService.login(new LoginRequest("usuario", "senha-errada")))
+                    .isInstanceOf(AuthenticationFailedException.class);
+        }
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("usuario", TestProperties.INITIAL_PASSWORD)))
+                .isInstanceOf(TooManyAttemptsException.class);
+    }
+
+    @Test
+    void shouldRejectLoginTypedWithDifferentCase() {
+        when(userRepository.findByLogin("USUARIO")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("USUARIO", TestProperties.INITIAL_PASSWORD)))
+                .isInstanceOf(AuthenticationFailedException.class);
+    }
+
+    @Test
+    void shouldCountCaseVariationsTowardsTheSameLockout() {
+        givenUserIsRegistered();
+        when(userRepository.findByLogin("Usuario")).thenReturn(Optional.empty());
+        for (int attempt = 0; attempt < TestProperties.MAX_LOGIN_FAILURES; attempt++) {
+            String login = attempt % 2 == 0 ? "usuario" : "Usuario";
+            assertThatThrownBy(() -> authService.login(new LoginRequest(login, "senha-errada")))
                     .isInstanceOf(AuthenticationFailedException.class);
         }
 

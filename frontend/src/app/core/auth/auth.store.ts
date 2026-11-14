@@ -6,6 +6,7 @@ import { ChangePasswordRequest, LoginRequest, User } from './auth.models';
 import { FIRST_ACCESS_PATH, HOME_PATH, LOGIN_PATH } from './auth.paths';
 import { AuthService } from './auth.service';
 import { SessionChannel, SessionEvent } from './session-channel';
+import { NEW_ACCOUNT_PARAM, SessionSlots } from './session-slots';
 
 export type SessionStatus = 'unknown' | 'authenticated' | 'anonymous';
 
@@ -16,6 +17,7 @@ export class AuthStore {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly sessionChannel = inject(SessionChannel);
+  private readonly sessionSlots = inject(SessionSlots);
 
   private readonly _user = signal<User | null>(null);
   private readonly _status = signal<SessionStatus>('unknown');
@@ -28,6 +30,27 @@ export class AuthStore {
 
   constructor() {
     this.sessionChannel.listen(event => void this.followOtherTab(event));
+  }
+
+  /**
+   * Runs at startup. A tab opened by "Entrar com outra conta" starts on a free slot, anonymous;
+   * any other tab recovers the session of its slot.
+   */
+  async start(url: URL): Promise<void> {
+    if (url.searchParams.has(NEW_ACCOUNT_PARAM) && this.sessionSlots.claimFreeSlot()) {
+      await firstValueFrom(this.authService.issueCsrfToken());
+      this.endSession();
+      return;
+    }
+    await this.restoreSession();
+  }
+
+  /** Puts this tab on another account already signed in on the browser. */
+  async switchAccount(slot: number): Promise<void> {
+    this.sessionSlots.switchTo(slot);
+    await this.restoreSession();
+    const user = this._user();
+    await this.router.navigateByUrl(user ? this.homeOf(user) : LOGIN_PATH);
   }
 
   /**
@@ -52,14 +75,14 @@ export class AuthStore {
     await firstValueFrom(this.authService.issueCsrfToken());
     const user = await firstValueFrom(this.authService.login(request));
     this.startSession(user);
-    this.sessionChannel.publish({ type: 'signed-in', userId: user.id });
+    this.publishSignedIn(user);
     return user;
   }
 
   async changePassword(request: ChangePasswordRequest): Promise<User> {
     const user = await firstValueFrom(this.authService.changePassword(request));
     this.startSession(user);
-    this.sessionChannel.publish({ type: 'signed-in', userId: user.id });
+    this.publishSignedIn(user);
     return user;
   }
 
@@ -68,7 +91,7 @@ export class AuthStore {
       await firstValueFrom(this.authService.logout());
     } finally {
       this.endSession();
-      this.sessionChannel.publish({ type: 'signed-out' });
+      this.sessionChannel.publish({ type: 'signed-out', slot: this.sessionSlots.current() });
       await this.router.navigateByUrl(LOGIN_PATH);
     }
   }
@@ -88,6 +111,9 @@ export class AuthStore {
   }
 
   private async followOtherTab(event: SessionEvent): Promise<void> {
+    if (event.slot !== this.sessionSlots.current()) {
+      return;
+    }
     if (event.type === 'signed-out') {
       await this.sessionExpired();
       return;
@@ -100,16 +126,26 @@ export class AuthStore {
     if (!currentUser || currentUser.id === previousUserId) {
       return;
     }
-    await this.router.navigateByUrl(currentUser.mustChangePassword ? FIRST_ACCESS_PATH : HOME_PATH);
+    await this.router.navigateByUrl(this.homeOf(currentUser));
+  }
+
+  private homeOf(user: User): string {
+    return user.mustChangePassword ? FIRST_ACCESS_PATH : HOME_PATH;
+  }
+
+  private publishSignedIn(user: User): void {
+    this.sessionChannel.publish({ type: 'signed-in', slot: this.sessionSlots.current(), userId: user.id });
   }
 
   private startSession(user: User): void {
     this._user.set(user);
     this._status.set('authenticated');
+    this.sessionSlots.remember(user);
   }
 
   private endSession(): void {
     this._user.set(null);
     this._status.set('anonymous');
+    this.sessionSlots.forgetCurrent();
   }
 }

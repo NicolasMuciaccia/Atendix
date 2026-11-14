@@ -23,7 +23,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
   styles: `
     :host { display: flex; flex-direction: column; gap: var(--space-1-5); min-width: 0; }
-    .label { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--ink-700); }
+    .label { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-body); }
     .optional { font-weight: var(--weight-regular); color: var(--text-subtle); }
     .message { font-size: var(--text-xs); color: var(--text-muted); }
     .message--error { color: var(--danger-text); }

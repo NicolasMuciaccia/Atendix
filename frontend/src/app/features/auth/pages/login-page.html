@@ -1,14 +1,22 @@
+<atx-theme-toggle class="theme-corner" />
+
 <div class="panel">
   <p class="wordmark">Atendix</p>
 
   <main class="card">
     <h1 class="title">Entrar</h1>
-    <p class="lead">Use o login e a senha fornecidos pelo administrador.</p>
+    <p class="lead">Use o login e a senha fornecidos pelo administrador. O login diferencia maiúsculas de minúsculas.</p>
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (addingAccount()) {
+        <p class="banner banner--info" role="status">
+          <atx-icon name="info-circle" [size]="16" />
+          Entrando com outra conta nesta aba. As contas já abertas continuam nas outras abas.
+        </p>
+      }
       @if (error()) {
         <p class="banner" role="alert">
-          <atx-icon name="circle-alert" [size]="15" />
+          <atx-icon name="exclamation-circle" [size]="15" />
           {{ error() }}
         </p>
       }
@@ -20,15 +28,11 @@
       </atx-field>
 
       <atx-field label="Senha" for="password" [error]="showError('password') ? 'Informe sua senha' : null">
-        <div class="password">
-          <input id="password" class="atx-control" formControlName="password" autocomplete="current-password"
-                 [type]="showPassword() ? 'text' : 'password'"
+        <atx-password-input>
+          <input id="password" class="atx-control" type="password" formControlName="password"
+                 autocomplete="current-password"
                  [attr.aria-invalid]="showError('password')" aria-describedby="password-message" />
-          <button atxIconButton type="button" size="md"
-                  [icon]="showPassword() ? 'lock' : 'eye'"
-                  [label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
-                  (click)="showPassword.set(!showPassword())"></button>
-        </div>
+        </atx-password-input>
       </atx-field>
 
       <button atxButton type="submit" size="lg" [fullWidth]="true" [loading]="submitting()">Entrar</button>

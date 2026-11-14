@@ -34,14 +34,14 @@
           <span class="cell" role="cell" data-label="Setor">{{ item.sectorName }}</span>
           <span class="cell" role="cell" data-label="Etiqueta"><atx-tag icon="tag">{{ item.assetTagCode }}</atx-tag></span>
           <span class="actions" role="cell">
-            <button atxIconButton icon="pen-line" [label]="'Editar ' + item.name" type="button"
+            <button atxIconButton icon="pencil" [label]="'Editar ' + item.name" type="button"
                     (click)="openEdit(item)"></button>
-            <button atxIconButton icon="trash-2" [label]="'Excluir ' + item.name" type="button"
+            <button atxIconButton icon="trash" [label]="'Excluir ' + item.name" type="button"
                     [disabled]="deletingId() === item.id" (click)="deleteTarget.set(item)"></button>
           </span>
         </div>
       } @empty {
-        <atx-empty-state icon="layers" title="Nenhum item cadastrado"
+        <atx-empty-state icon="desktop" title="Nenhum item cadastrado"
                          description="Um item é o equipamento que recebe chamados: ele fica em um setor e tem uma etiqueta.">
           <button atxButton size="sm" iconLeft="plus" type="button" (click)="openCreate()">Novo item</button>
         </atx-empty-state>
@@ -55,11 +55,11 @@
             (closed)="closeForm()">
   <form id="item-form" class="form" [formGroup]="form" (ngSubmit)="save()" novalidate>
     @if (formError()) {
-      <p class="banner" role="alert"><atx-icon name="circle-alert" [size]="15" /> {{ formError() }}</p>
+      <p class="banner" role="alert"><atx-icon name="exclamation-circle" [size]="15" /> {{ formError() }}</p>
     }
     @if (sectors.loaded() && assetTags.loaded() && !catalogReady()) {
       <p class="banner info">
-        <atx-icon name="info" [size]="15" />
+        <atx-icon name="info-circle" [size]="15" />
         <span>Cadastre ao menos um <a routerLink="../setores">setor</a> e uma <a routerLink="../etiquetas">etiqueta</a> antes de criar itens.</span>
       </p>
     }
@@ -102,6 +102,6 @@
             (closed)="deleteTarget.set(null)">
   <div dialogActions>
     <button atxButton variant="secondary" type="button" (click)="deleteTarget.set(null)">Manter</button>
-    <button atxButton variant="danger" iconLeft="trash-2" type="button" (click)="confirmDelete()">Excluir item</button>
+    <button atxButton variant="danger" iconLeft="trash" type="button" (click)="confirmDelete()">Excluir item</button>
   </div>
 </atx-dialog>

@@ -7,10 +7,12 @@ import com.uvv.atendix.model.entity.Ticket;
 import com.uvv.atendix.model.entity.User;
 import com.uvv.atendix.model.enums.TicketStatus;
 import com.uvv.atendix.model.request.ChangeTicketStatusRequest;
+import com.uvv.atendix.model.request.CountTicketsRequest;
 import com.uvv.atendix.model.request.CreateTicketRequest;
 import com.uvv.atendix.model.request.ListTicketsRequest;
 import com.uvv.atendix.model.response.PageResponse;
 import com.uvv.atendix.model.response.TicketResponse;
+import com.uvv.atendix.model.response.TicketStatusCountsResponse;
 import com.uvv.atendix.repository.ItemRepository;
 import com.uvv.atendix.repository.TicketRepository;
 import com.uvv.atendix.repository.TicketSpecifications;
@@ -80,14 +82,26 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public PageResponse<TicketResponse> listTickets(ListTicketsRequest request, AuthenticatedUser currentUser) {
-        validateSearchPermission(request, currentUser);
+        validateSearchPermission(request.hasSearchFilters(), currentUser);
 
-        TicketFilter filter = new TicketFilter(visibleRequesterId(currentUser), request.date(), request.sectorId());
+        TicketFilter filter = new TicketFilter(visibleRequesterId(currentUser), request.date(), request.sectorId(),
+                request.assetTagId(), request.status());
         PageRequest pageRequest = PageRequest.of(request.page(), request.size(), MOST_RECENT_FIRST);
 
         return PageResponse.from(ticketRepository
                 .findAll(TicketSpecifications.matching(filter), pageRequest)
                 .map(ticketMapper::toResponse));
+    }
+
+    @Transactional(readOnly = true)
+    public TicketStatusCountsResponse countByStatus(CountTicketsRequest request, AuthenticatedUser currentUser) {
+        validateSearchPermission(request.hasSearchFilters(), currentUser);
+
+        UUID requesterId = visibleRequesterId(currentUser);
+        return TicketStatusCountsResponse.of(
+                countInStatus(request, requesterId, TicketStatus.OPEN),
+                countInStatus(request, requesterId, TicketStatus.IN_PROGRESS),
+                countInStatus(request, requesterId, TicketStatus.FINISHED));
     }
 
     @Transactional(readOnly = true)
@@ -130,8 +144,14 @@ public class TicketService {
         });
     }
 
-    private void validateSearchPermission(ListTicketsRequest request, AuthenticatedUser currentUser) {
-        if (request.hasSearchFilters() && !currentUser.isAdmin()) {
+    private long countInStatus(CountTicketsRequest request, UUID requesterId, TicketStatus status) {
+        TicketFilter filter = new TicketFilter(requesterId, request.date(), request.sectorId(),
+                request.assetTagId(), status);
+        return ticketRepository.count(TicketSpecifications.matching(filter));
+    }
+
+    private void validateSearchPermission(boolean hasSearchFilters, AuthenticatedUser currentUser) {
+        if (hasSearchFilters && !currentUser.isAdmin()) {
             throw new ForbiddenOperationException(SEARCH_REQUIRES_ADMIN);
         }
     }

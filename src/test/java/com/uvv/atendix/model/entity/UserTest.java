@@ -19,10 +19,15 @@ class UserTest {
     }
 
     @Test
-    void shouldStoreLoginInLowerCaseWithoutSpaces() {
+    void shouldStoreLoginAsTypedWithoutSpaces() {
         User user = User.register("Maria Souza", "  Maria.Souza ", Role.COMMON, UserFixtures.PASSWORD_HASH);
 
-        assertThat(user.getLogin()).isEqualTo("maria.souza");
+        assertThat(user.getLogin()).isEqualTo("Maria.Souza");
+    }
+
+    @Test
+    void shouldIdentifyLoginsRegardlessOfCase() {
+        assertThat(User.loginKey(" Maria.Souza ")).isEqualTo(User.loginKey("maria.souza"));
     }
 
     @Test

@@ -9,9 +9,11 @@ import com.uvv.atendix.model.entity.User;
 import com.uvv.atendix.model.entity.UserFixtures;
 import com.uvv.atendix.model.enums.TicketStatus;
 import com.uvv.atendix.model.request.ChangeTicketStatusRequest;
+import com.uvv.atendix.model.request.CountTicketsRequest;
 import com.uvv.atendix.model.request.CreateTicketRequest;
 import com.uvv.atendix.model.request.ListTicketsRequest;
 import com.uvv.atendix.model.response.TicketResponse;
+import com.uvv.atendix.model.response.TicketStatusCountsResponse;
 import com.uvv.atendix.repository.ItemRepository;
 import com.uvv.atendix.repository.TicketRepository;
 import com.uvv.atendix.repository.UserRepository;
@@ -22,8 +24,13 @@ import com.uvv.atendix.util.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -90,9 +97,37 @@ class TicketServiceTest {
 
     @Test
     void shouldForbidCommonUserFromSearchingBySector() {
-        ListTicketsRequest request = new ListTicketsRequest(null, item.getSector().getId(), null, null);
+        ListTicketsRequest request = new ListTicketsRequest(null, item.getSector().getId(), null, null, null, null);
 
         assertThatThrownBy(() -> ticketService.listTickets(request, authenticated(requester)))
+                .isInstanceOf(ForbiddenOperationException.class);
+    }
+
+    @Test
+    void shouldLetCommonUserFilterOwnTicketsByStatusAndTag() {
+        when(ticketRepository.findAll(ArgumentMatchers.<Specification<Ticket>>any(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+        ListTicketsRequest request = new ListTicketsRequest(null, null, item.getAssetTag().getId(),
+                TicketStatus.OPEN, null, null);
+
+        assertThat(ticketService.listTickets(request, authenticated(requester)).content()).isEmpty();
+    }
+
+    @Test
+    void shouldCountTicketsInEachStatus() {
+        when(ticketRepository.count(ArgumentMatchers.<Specification<Ticket>>any())).thenReturn(4L, 2L, 9L);
+
+        TicketStatusCountsResponse counts = ticketService.countByStatus(
+                new CountTicketsRequest(null, null, null), authenticated(requester));
+
+        assertThat(counts).isEqualTo(new TicketStatusCountsResponse(4, 2, 9, 15));
+    }
+
+    @Test
+    void shouldForbidCommonUserFromCountingBySector() {
+        CountTicketsRequest request = new CountTicketsRequest(null, item.getSector().getId(), null);
+
+        assertThatThrownBy(() -> ticketService.countByStatus(request, authenticated(requester)))
                 .isInstanceOf(ForbiddenOperationException.class);
     }
 
