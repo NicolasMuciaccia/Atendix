@@ -9,8 +9,9 @@ services:
       POSTGRES_DB: ${DB_NAME:-atendix}
       POSTGRES_USER: ${DB_USER:-atendix}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-atendix-local}
+      PGPORT: ${DB_PORT:-5435}
     ports:
-      - "${DB_PORT:-5433}:5432"
+      - "127.0.0.1:${DB_PORT:-5435}:${DB_PORT:-5435}"
     volumes:
       - atendix-data:/var/lib/postgresql/data
 

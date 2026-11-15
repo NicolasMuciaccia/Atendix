@@ -7,6 +7,11 @@ services:
       POSTGRES_DB: ${DB_NAME:-atendix}
       POSTGRES_USER: ${DB_USER:-atendix}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-atendix-local}
+      # Port the server listens on (and pg_isready checks); the same DB_PORT of the .env everywhere
+      PGPORT: ${DB_PORT:-5435}
+    ports:
+      # Published only on this machine, for database clients such as DBeaver or pgAdmin
+      - "127.0.0.1:${DB_PORT:-5435}:${DB_PORT:-5435}"
     volumes:
       - atendix-db:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +25,7 @@ services:
     build: .
     environment:
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: ${DB_PORT:-5435}
       DB_NAME: ${DB_NAME:-atendix}
       DB_USER: ${DB_USER:-atendix}
       DB_PASSWORD: ${DB_PASSWORD:-atendix-local}

@@ -32,6 +32,8 @@ A primeira execução baixa as imagens e compila tudo, o que leva alguns minutos
 
 As tabelas e os usuários padrão são criados automaticamente. Setores, etiquetas e itens começam vazios e são cadastrados pelo administrador em **Cadastros**. Os dados ficam no volume `atendix-db` e sobrevivem a reinícios.
 
+O banco fica na porta **5435**, a mesma do `.env.example`: o PostgreSQL escuta nela dentro do container, a API se conecta por ela e ela é publicada só em `127.0.0.1`, para abrir o banco num cliente como DBeaver ou pgAdmin (host `localhost`, porta `5435`, banco/usuário `atendix`, senha do `DB_PASSWORD`).
+
 | Ação | Comando |
 |---|---|
 | Ver se tudo subiu (os três serviços ficam `healthy`) | `docker compose ps` |
@@ -39,10 +41,10 @@ As tabelas e os usuários padrão são criados automaticamente. Setores, etiquet
 | Parar mantendo os dados | `docker compose down` |
 | Parar e apagar os dados | `docker compose down -v` |
 
-Se a porta `8080` já estiver em uso, escolha outra na hora de subir (no PowerShell: `$env:ATENDIX_PORT=8090; docker compose up --build -d`):
+Se a porta `8080` ou a `5435` já estiver em uso, escolha outra na hora de subir (no PowerShell: `$env:ATENDIX_PORT=8090; $env:DB_PORT=5436; docker compose up --build -d`):
 
 ```bash
-ATENDIX_PORT=8090 docker compose up --build -d
+ATENDIX_PORT=8090 DB_PORT=5436 docker compose up --build -d
 ```
 
 Variáveis opcionais, lidas do ambiente ou de um `.env` na raiz:
@@ -50,6 +52,7 @@ Variáveis opcionais, lidas do ambiente ou de um `.env` na raiz:
 | Variável | Para que serve | Padrão |
 |---|---|---|
 | `ATENDIX_PORT` | Porta do navegador | `8080` |
+| `DB_PORT` | Porta do banco, dentro do container e no PC | `5435` |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Banco criado no container | `atendix` / `atendix` / `atendix-local` |
 | `JWT_SECRET` | Segredo dos tokens, com no mínimo 32 caracteres. Vazio, a API gera um aleatório a cada início, e reiniciar a API encerra as sessões abertas | gerado |
 | `COOKIE_SECURE` | Cookies só por HTTPS. Fica `false` porque o acesso local é por HTTP | `false` |
@@ -76,7 +79,7 @@ cp .env.example .env
 | Variável | Para que serve | Exemplo |
 |---|---|---|
 | `DB_HOST` | Host do banco | `localhost` |
-| `DB_PORT` | Porta do banco no host | `5433` |
+| `DB_PORT` | Porta do banco no host | `5435` |
 | `DB_NAME` | Nome do banco | `atendix` |
 | `DB_USER` | Usuário do banco | `atendix` |
 | `DB_PASSWORD` | Senha do banco (escolha uma) | — |
@@ -91,7 +94,7 @@ O `.env` não vai para o repositório. O banco e a API leem o mesmo arquivo.
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-Sobe só o PostgreSQL, na porta `DB_PORT` do host (`5433` no exemplo).
+Sobe só o PostgreSQL, na porta `DB_PORT` (`5435` no exemplo). É o mesmo banco da seção anterior sem a API e a interface; por usarem a mesma porta, rode um modo ou o outro.
 
 #### 3. API
 
